@@ -1,4 +1,4 @@
-This is a web application that uses your email box as your social network.
+With dorcx your email box is your social network.
 
 Unlike other social networks:
 
@@ -7,4 +7,3 @@ Unlike other social networks:
  * This one cares about your security, and posts are signed or encrypted.
  * This one is [Free](http://en.wikipedia.org/wiki/Free_software) and open.
 
-Come on in, let's change the world!

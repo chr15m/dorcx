@@ -8,3 +8,10 @@ Install
  * Restart Apache
  * Have fun!
 
+or try:
+
+$ cd server
+$ make gunicorn
+
+and then point your browser at http://localhost:8000/
+

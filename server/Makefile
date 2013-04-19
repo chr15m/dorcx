@@ -10,4 +10,4 @@ vp:
 	vp/bin/pip install -r requirements.txt
 
 gunicorn: vp
-	vp/bin/gunicorn_django -w 5 dorcx
+	vp/bin/gunicorn_django -w 5 -t 15 dorcx

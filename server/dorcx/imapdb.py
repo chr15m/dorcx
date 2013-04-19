@@ -21,7 +21,7 @@ class ImapDb:
 		if BASIC_EMAIL_REGEX.match(email):
 			emailparts = email.split("@")
 		else:
-			raise DorcxImapDbException("You have not entered a valid email address.")
+			raise ImapDbException("You have not entered a valid email address.")
 		# get the username from the email address
 		if username is None:
 			username = emailparts[0]

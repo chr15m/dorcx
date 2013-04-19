@@ -9,7 +9,11 @@ from django.views.generic.simple import direct_to_template
 import settings
 
 urlpatterns = patterns('',
+	# Serve the index page
 	url(r'^$', direct_to_template, {"template": "client/index.html"}, name='home'),
+	
+	# JSON API endpoings
+	url(r'^signin$', "dorcx.views.signin", name="signin"),
 	
 	# Examples:
 	# url(r'^$', 'dorcx.views.home', name='home'),
@@ -24,6 +28,7 @@ urlpatterns = patterns('',
 
 # statically serve this stuff while developing
 if settings.DEBUG:
+	urlpatterns += static("/c/", document_root=settings.CLIENT_ROOT)
 	urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 	urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

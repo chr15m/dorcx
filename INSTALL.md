@@ -19,7 +19,7 @@ Choose one of the installation methods below, depending on your requirements.
 
 ### Local development
 
-	git clone 
+	git clone https://github.com/chr15m/dorcx/
 	git submodule init
 	git submodule update
 	cd server

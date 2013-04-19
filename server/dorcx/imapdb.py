@@ -8,7 +8,7 @@ total_re = re.compile("MESSAGES (?P<total>\d+)")
 unread_re = re.compile("UNSEEN (?P<unread>\d+)")
 
 # TODO: persist multiple imap connections in some sensible way
-class DorcxImapDb:
+class ImapDb:
 	def __init__(self, email, password, username=None, domain=None):
 		# TODO: validate email first
 		emailparts = email.split("@")
@@ -24,7 +24,7 @@ class DorcxImapDb:
 		# TODO: catch e.g. imaplib.error: [AUTHENTICATIONFAILED] Authentication failed.
 		self.m.login(username, password)
 	
-	def setup_dorcx_folders(self):
+	def setup_folders(self):
 		""" Sets up the dorcx subfolder and it's subfolders - config, private, public. """
 		# TODO: catch errors properly
 		# TODO: ignore this error though:
@@ -50,7 +50,7 @@ class DorcxImapDb:
 				r = self.m.status(b, '(UNSEEN MESSAGES)')[1][0]
 				total = total_re.search(r).groupdict()["total"]
 				unread = unread_re.search(r).groupdict()["unread"]
-				return [unread, total]
+				yield b,[unread, total]
 		except socket.gaierror, e:
 			return {"error": e}
 

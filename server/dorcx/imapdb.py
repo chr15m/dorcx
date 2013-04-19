@@ -50,7 +50,7 @@ class ImapDb:
 				r = self.m.status(b, '(UNSEEN MESSAGES)')[1][0]
 				total = total_re.search(r).groupdict()["total"]
 				unread = unread_re.search(r).groupdict()["unread"]
-				return [unread, total]
+				yield b,[unread, total]
 		except socket.gaierror, e:
 			return {"error": e}
 

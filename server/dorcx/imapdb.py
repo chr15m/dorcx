@@ -7,41 +7,49 @@ import socket
 total_re = re.compile("MESSAGES (?P<total>\d+)")
 unread_re = re.compile("UNSEEN (?P<unread>\d+)")
 
+BASIC_EMAIL_REGEX = re.compile(r"[^@]+@[^@]+\.[^@]+")
+
 # TODO: persist multiple imap connections in some sensible way
+
+class ImapDbException(Exception):
+	pass
+
 class DorcxImapDb:
-	def __init__(self, email, password, username=None, domain=None):
-		# TODO: validate email first
-		emailparts = email.split("@")
+	""" Communicates with the current user's IMAP box, manages the dorcx contents, treats an IMAP mailbox like a database. """
+	def __init__(self, email, password, username=None, domain=None, use_ssl=True):
+		# validate email
+		if BASIC_EMAIL_REGEX.match(email):
+			emailparts = email.split("@")
+		else:
+			raise DorcxImapDbException("You have not entered a valid email address.")
 		# get the username from the email address
 		if username is None:
 			username = emailparts[0]
 		# get the domain name from the email address
 		if domain is None:
 			domain = emailparts[1]
-		# TODO: test various ways of logging in (Non-SSL), common server subdomains, etc.
-		# TODO: catch e.g. socket.gaierror: [Errno -2] Name or service not known
-		self.m = imaplib.IMAP4_SSL(domain)
-		# TODO: catch e.g. imaplib.error: [AUTHENTICATIONFAILED] Authentication failed.
-		self.m.login(username, password)
+		# TODO: on failure automatically try various ways of connecting (Non-SSL, common server subdomains, etc.)
+		# try to connect to the IMAP server
+		# TODO: timeout? if you incorrectly connect to some servers with no SSL they hang
+		try:
+			self.m = use_ssl and imaplib.IMAP4_SSL(domain) or imaplib.IMAP4(domain)
+		except socket.gaierror:
+			raise ImapDbException("There was a problem contacting the server. Did you enter the correct server details?")
+		# try to log in with the username and password provided
+		try:
+			self.m.login(username, password)
+		except self.m.error:
+			raise ImapDbException("There was a problem logging in. Did you enter the right password?")
 	
 	def setup_dorcx_folders(self):
-		""" Sets up the dorcx subfolder and it's subfolders - config, private, public. """
-		# TODO: catch errors properly
-		# TODO: ignore this error though:
-		# ('NO', ['[ALREADYEXISTS] Mailbox exists.'])
-		result = self.m.create("dorcx/")
-		if result and len(result) and result[0] == 'NO':
-			return {"error": result}
-		else:
-			self.m.create("dorcx/config")
-			self.m.create("dorcx/inbox")
-			self.m.create("dorcx/public/")
-			self.m.create("dorcx/public/config")
-			self.m.create("dorcx/public/outbox")
-			self.m.create("dorcx/private/")
-			self.m.create("dorcx/private/config")
-			self.m.create("dorcx/private/outbox")
-			return True
+		""" Sets up the dorcx subfolder and its subfolders - config, private, public. """
+		default_folders = ["dorcx/", "dorcx/config", "dorcx/inbox", "dorcx/public/", "dorcx/public/config", "dorcx/public/outbox", "dorcx/private/", "dorcx/private/config", "dorcx/private/outbox"]
+		for d in default_folders:
+			result = self.m.create("dorcx/")
+			# if there was an error result ("NO") and there were errors other than "ALREADYEXISTS" errors then throw
+			if result and len(result) and result[0] == 'NO' and len([r for r in result[1] if "ALREADYEXISTS" in r]) == len(result[1]):
+				raise ImapDbException("There was a problem contacting the server. Did you enter the correct server details?")
+		return True
 	
 	def get_unread_count(self, boxes=[]):
 		""" Returns unread count for the user's actual INBOX folder. """
@@ -52,5 +60,5 @@ class DorcxImapDb:
 				unread = unread_re.search(r).groupdict()["unread"]
 				return [unread, total]
 		except socket.gaierror, e:
-			return {"error": e}
+			raise ImapDbException("There was a problem communicating with your email box.")
 

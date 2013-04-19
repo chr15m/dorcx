@@ -14,7 +14,7 @@ BASIC_EMAIL_REGEX = re.compile(r"[^@]+@[^@]+\.[^@]+")
 class ImapDbException(Exception):
 	pass
 
-class DorcxImapDb:
+class ImapDb:
 	""" Communicates with the current user's IMAP box, manages the dorcx contents, treats an IMAP mailbox like a database. """
 	def __init__(self, email, password, username=None, domain=None, use_ssl=True):
 		# validate email
@@ -41,7 +41,7 @@ class DorcxImapDb:
 		except self.m.error:
 			raise ImapDbException("There was a problem logging in. Did you enter the right password?")
 	
-	def setup_dorcx_folders(self):
+	def setup_folders(self):
 		""" Sets up the dorcx subfolder and its subfolders - config, private, public. """
 		default_folders = ["dorcx/", "dorcx/config", "dorcx/inbox", "dorcx/public/", "dorcx/public/config", "dorcx/public/outbox", "dorcx/private/", "dorcx/private/config", "dorcx/private/outbox"]
 		for d in default_folders:
@@ -58,7 +58,7 @@ class DorcxImapDb:
 				r = self.m.status(b, '(UNSEEN MESSAGES)')[1][0]
 				total = total_re.search(r).groupdict()["total"]
 				unread = unread_re.search(r).groupdict()["unread"]
-				return [unread, total]
+				yield b,[unread, total]
 		except socket.gaierror, e:
 			raise ImapDbException("There was a problem communicating with your email box.")
 

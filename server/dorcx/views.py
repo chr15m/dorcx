@@ -9,7 +9,8 @@ class LoginError(Exception):
 def signin(request):
 	try:
 		if request.method == "POST":
-			d = ImapDb(request.POST.get("email"), request.POST.get("password"), request.POST.get("username"), request.POST.get("domain"), request.POST.get("use_ssl"))
+			d = ImapDb(request.POST.get("email"), request.POST.get("password"), request.POST.get("username"), request.POST.get("domain"), request.POST.get("use_ssl", True))
+			return True
 		else:
 			return {"error": "Couldn't log in. Are you using the latest version?"}
 	except ImapDbException, e:

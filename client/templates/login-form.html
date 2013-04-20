@@ -1,8 +1,33 @@
+<p>
+	dorcx is a personal social network built on your email box.
+	enter your email login below to get started.
+	your credentials, posts, and content aren't stored here - you hold onto those. [<a href='#login-form-find-out-more'>find out more</a>]
+</p>
+
+<p id='login-form-find-out-more'>
+</p>
+
+<div id="login-error"></div>
+
 <form id="login-form" action="signin" method="post">
-	<label for="email">email: </label>
-		<input name="email" id="email"/>
-	<label for="password">password: </label>
-		<input name="password" type="password" id="password"/>
+	<div id="login-form-minimal">
+		<label for="email">email: </label>
+			<input name="email" id="email"/>
+		<label for="password">password: </label>
+			<input name="password" type="password" id="password"/>
+	</div>
+	<div id="login-form-extra-details">
+		<label for="username">username: </label>
+			<input name="username" id="username"/>
+		<label for="domain">domain: </label>
+			<input name="domain" type="domain" id="domain"/>
+	</div>
 	<input type="submit" value="submit" name="submit"/>
-	<div id="login-error"></div>
 </form>
+
+<p>
+	<a href='http://github.com/chr15m/dorcx'>
+		run your own instance<br/>
+		(get the source code)
+	</a>
+</p>

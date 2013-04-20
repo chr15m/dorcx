@@ -3,7 +3,7 @@ var template = {};
 
 $(function() {
 	// load the templates
-	var template_files = ["login-form.html"];
+	var template_files = ["login-form.html", "signed-in-setup-folders.html"];
 	for (t=0; t<template_files.length; t++) {
 		$.get("c/templates/" + template_files[t], function(tn, t) {
 			return function(data) {

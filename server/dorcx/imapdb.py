@@ -9,7 +9,10 @@ unread_re = re.compile("UNSEEN (?P<unread>\d+)")
 
 BASIC_EMAIL_REGEX = re.compile(r"[^@]+@[^@]+\.[^@]+")
 
+FOLDERS = ["dorcx/", "dorcx/config", "dorcx/inbox", "dorcx/public/", "dorcx/public/config", "dorcx/public/outbox", "dorcx/private/", "dorcx/private/config", "dorcx/private/outbox"]
+
 # TODO: persist multiple imap connections in some sensible way
+# TODO: unit tests
 
 class ImapDbException(Exception):
 	pass
@@ -40,24 +43,44 @@ class ImapDb:
 			raise ImapDbException(["CONNECTION", e.message])
 		except socket.error, e:
 			raise ImapDbException(["CONNECTION", e.message])
+		# TODO: arg? ImapDbException: ['AUTH', 'Maximum number of connections from user+IP exceeded (mail_max_userip_connections)']
 		# try to log in with the username and password provided
 		try:
 			self.m.login(username, password)
 		except self.m.error, e:
 			raise ImapDbException(["AUTH", e.message])
 	
+	def get_missing_folder_list(self):
+		result = self.m.list("dorcx*")
+		""" 	In [4]: d.m.list("dorcx*")
+			Out[4]: 
+			('OK',
+			 ['(\\Noselect \\HasChildren) "/" "dorcx"',
+			  '(\\NoInferiors \\UnMarked) "/" "dorcx/inbox"',
+			  '(\\Noselect \\HasChildren) "/" "dorcx/public"',
+			  '(\\NoInferiors \\UnMarked) "/" "dorcx/public/outbox"',
+			  '(\\NoInferiors \\UnMarked) "/" "dorcx/public/config"',
+			  '(\\Noselect \\HasChildren) "/" "dorcx/private"',
+			  '(\\NoInferiors \\UnMarked) "/" "dorcx/private/outbox"',
+			  '(\\NoInferiors \\UnMarked) "/" "dorcx/private/config"',
+			  '(\\NoInferiors \\UnMarked) "/" "dorcx/config"'])"""
+		# see if the folders we want match those on the server
+		want = set([f.rstrip("/") for f in FOLDERS])
+		have = set([f.split(" ")[-1][1:-1] for f in result[1]])
+		need = list(want - have)
+		return {"missing_folders": need, "all_missing": len(need) == len(FOLDERS)}
+	
 	def setup_folders(self):
 		""" Sets up the dorcx subfolder and its subfolders - config, private, public. """
-		default_folders = ["dorcx/", "dorcx/config", "dorcx/inbox", "dorcx/public/", "dorcx/public/config", "dorcx/public/outbox", "dorcx/private/", "dorcx/private/config", "dorcx/private/outbox"]
 		results = []
-		for d in default_folders:
+		for d in FOLDERS:
 			result = self.m.create("dorcx/")
 			# if there was an error result ("NO") and there were errors other than "ALREADYEXISTS" errors then throw
 			if result and len(result) and result[0] == 'NO' and len([r for r in result[1] if "ALREADYEXISTS" in r]) == len(result[1]):
 				raise ImapDbException(["BOX-CREATION"])
 			else:
-				results.append(result)
-		return results
+				results.append([d, result])
+		return {"created_folders": results}
 	
 	def get_unread_count(self, boxes=[]):
 		""" Returns unread count for the user's actual INBOX folder. """

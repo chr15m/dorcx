@@ -12,7 +12,7 @@ def signin(request):
 			d = ImapDb(request.POST.get("email"), request.POST.get("password"), request.POST.get("username"), request.POST.get("domain"), request.POST.get("use_ssl", True))
 			return True
 		else:
-			return {"error": "Couldn't log in. Are you using the latest version?"}
+			return {"error": ["BAD-PROTOCOL"]}
 	except ImapDbException, e:
 		return {"error": e.message}
 

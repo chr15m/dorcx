@@ -21,7 +21,7 @@ class ImapDb:
 		if BASIC_EMAIL_REGEX.match(email):
 			emailparts = email.split("@")
 		else:
-			raise ImapDbException("You have not entered a valid email address.")
+			raise ImapDbException(["EMAIL-VALIDATION"])
 		# get the username from the email address
 		if not username:
 			username = emailparts[0]
@@ -36,23 +36,28 @@ class ImapDb:
 				self.m = imaplib.IMAP4_SSL(domain)
 			else:
 				self.m = imaplib.IMAP4(domain)
-		except socket.gaierror:
-			raise ImapDbException("There was a problem contacting the server. Did you enter the correct server details?")
+		except socket.gaierror, e:
+			raise ImapDbException(["CONNECTION", e.message])
+		except socket.error, e:
+			raise ImapDbException(["CONNECTION", e.message])
 		# try to log in with the username and password provided
 		try:
 			self.m.login(username, password)
 		except self.m.error, e:
-			raise ImapDbException("There was a problem logging in. Did you enter the right password?")
+			raise ImapDbException(["AUTH", e.message])
 	
 	def setup_folders(self):
 		""" Sets up the dorcx subfolder and its subfolders - config, private, public. """
 		default_folders = ["dorcx/", "dorcx/config", "dorcx/inbox", "dorcx/public/", "dorcx/public/config", "dorcx/public/outbox", "dorcx/private/", "dorcx/private/config", "dorcx/private/outbox"]
+		results = []
 		for d in default_folders:
 			result = self.m.create("dorcx/")
 			# if there was an error result ("NO") and there were errors other than "ALREADYEXISTS" errors then throw
 			if result and len(result) and result[0] == 'NO' and len([r for r in result[1] if "ALREADYEXISTS" in r]) == len(result[1]):
-				raise ImapDbException("There was a problem creating the dorcx folders in your email box.")
-		return True
+				raise ImapDbException(["BOX-CREATION"])
+			else:
+				results.append(result)
+		return results
 	
 	def get_unread_count(self, boxes=[]):
 		""" Returns unread count for the user's actual INBOX folder. """
@@ -63,5 +68,5 @@ class ImapDb:
 				unread = unread_re.search(r).groupdict()["unread"]
 				yield b,[unread, total]
 		except socket.gaierror, e:
-			raise ImapDbException("There was a problem communicating with your email box.")
+			raise ImapDbException(["INBOX-READ", e.message])
 

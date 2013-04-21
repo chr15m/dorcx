@@ -1,0 +1,9 @@
+/* CSS that does functional stuff like setting thigns as hidden on startup, transitions, etc. */
+
+#login-form-extra-details {
+	display: none;
+}
+
+#login-form-submit-loader {
+	display: none;
+}

@@ -1,19 +1,25 @@
 // global variable to store the template files
 var template = {};
 
+var _dorcx_template_files = [
+	"login-form.html",
+	"signed-in-setup-folders.html",
+	"do-not-continue.html",
+	"need-more-folders.html"
+];
+
 $(function() {
 	// load the templates
-	var template_files = ["login-form.html", "signed-in-setup-folders.html", "do-not-continue.html"];
-	for (t=0; t<template_files.length; t++) {
-		$.get("c/templates/" + template_files[t], function(tn, t) {
+	for (t=0; t<_dorcx_template_files.length; t++) {
+		$.get("c/templates/" + _dorcx_template_files[t], function(tn, t) {
 			return function(data) {
 				template[tn] = data;
-				template_files.pop();
+				_dorcx_template_files.pop();
 				// once we've loaded each template
-				if (template_files.length == 0) {
+				if (_dorcx_template_files.length == 0) {
 					$(document).trigger('templates_loaded');
 				}
 			}
-		}(template_files[t], t));
+		}(_dorcx_template_files[t], t));
 	}
 });

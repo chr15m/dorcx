@@ -74,10 +74,10 @@ class ImapDb:
 		""" Sets up the dorcx subfolder and its subfolders - config, private, public. """
 		results = []
 		for d in FOLDERS:
-			result = self.m.create("dorcx/")
+			result = self.m.create(d)
 			# if there was an error result ("NO") and there were errors other than "ALREADYEXISTS" errors then throw
-			if result and len(result) and result[0] == 'NO' and len([r for r in result[1] if "ALREADYEXISTS" in r]) == len(result[1]):
-				raise ImapDbException(["BOX-CREATION"])
+			if result and len(result) and result[0] == 'NO' and len([r for r in result[1] if "ALREADYEXISTS" in r]) != len(result[1]):
+				raise ImapDbException(["BOX-CREATION", result])
 			else:
 				results.append([d, result])
 		return {"created_folders": results}

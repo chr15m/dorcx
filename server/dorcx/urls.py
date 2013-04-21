@@ -14,6 +14,7 @@ urlpatterns = patterns('',
 	
 	# JSON API endpoings
 	url(r'^signin$', "dorcx.views.signin", name="signin"),
+	url(r'^create-missing-folders$', "dorcx.views.create_missing_folders", name="create_missing_folders"),
 	
 	# Examples:
 	# url(r'^$', 'dorcx.views.home', name='home'),

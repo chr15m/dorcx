@@ -60,6 +60,10 @@ $(function() {
 	
 	$(document).on("click", "#setup-folders-yes", function(ev) {
 		// ask the server to create any missing folders for this user
+		$.get("create-missing-folders", function(data) {
+			console.log(data);
+			// load up the main interface
+		}, "json");
 	});
 	
 	$(document).on("click", "#setup-folders-no", function(ev) {

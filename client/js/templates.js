@@ -5,7 +5,8 @@ var _dorcx_template_files = [
 	"login-form.html",
 	"signed-in-setup-folders.html",
 	"do-not-continue.html",
-	"need-more-folders.html"
+	"need-more-folders.html",
+	"main.html"
 ];
 
 $(function() {

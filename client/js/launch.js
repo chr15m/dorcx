@@ -12,6 +12,7 @@ $(function() {
 				$("#content").html(template["login-form.html"]);
 			} else {
 				// load up the main interface
+				_dorcx_main();
 			}
 		}, "json");
 	});
@@ -61,6 +62,7 @@ $(function() {
 					}
 				} else {
 					// load up the main interface
+					_dorcx_main();
 				}
 			}
 		}, "json");
@@ -73,6 +75,7 @@ $(function() {
 		$.get("create-missing-folders", function(data) {
 			console.log(data);
 			// load up the main interface
+			_dorcx_main();
 		}, "json");
 	});
 	

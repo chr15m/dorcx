@@ -82,14 +82,15 @@ class ImapDb:
 				results.append([d, result])
 		return {"created_folders": results}
 	
-	def get_unread_count(self, boxes=[]):
+	def get_unread_count(self, boxes=['INBOX']):
 		""" Returns unread count for the user's actual INBOX folder. """
 		try:
-			for b in ['INBOX'] + boxes:
+			for b in boxes:
 				r = self.m.status(b, '(UNSEEN MESSAGES)')[1][0]
 				total = total_re.search(r).groupdict()["total"]
 				unread = unread_re.search(r).groupdict()["unread"]
 				yield b,[unread, total]
 		except socket.gaierror, e:
 			raise ImapDbException(["INBOX-READ", e.message])
-
+	
+	def get_folder_list()

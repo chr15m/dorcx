@@ -2,8 +2,18 @@
 $(function() {
 	// once the templates are loaded hide the loader and show the login form
 	$(document).bind("templates_loaded", function(ev) {
-		$("#loader").hide();
-		$("#content").html(template["login-form.html"]);
+		// test to see if this client is already authenticated
+		$.get("authenticate", function(data) {
+			// if the server says we're not logged in
+			// or there is a problem with the authentication details
+			if (data == false || data["error"]) {
+				// start the login process
+				$("#loader").hide();
+				$("#content").html(template["login-form.html"]);
+			} else {
+				// load up the main interface
+			}
+		}, "json");
 	});
 	
 	/***

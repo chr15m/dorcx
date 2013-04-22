@@ -19,3 +19,12 @@ def create_missing_folders(request):
 	d = login(request)
 	return d.setup_folders()
 
+@json_api
+@catch_imapdb_errors
+def authenticate(request):
+	if request.session.get("login_details") is None:
+		return False
+	else:
+		d = login(request)
+		return True
+

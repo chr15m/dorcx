@@ -1,4 +1,8 @@
-IMAP use cases:
+## SSL ##
+
+ * https://www.gandi.net/ssl/create/csr
+
+## IMAP ##
 
 moving a message between folders:
 

@@ -4,6 +4,12 @@
 
 ## IMAP ##
 
+[Perdition](http://horms.net/projects/perdition/) and [imapproxy](http://www.imapproxy.org) are programs that will cache IMAP connections, hence improving performance of webmail clients.
+
+Great post about whether or not to use a database for webmail:
+
+ * http://stackoverflow.com/questions/14906417/should-a-web-based-imap-client-have-its-own-database
+
 moving a message between folders:
 
  * http://stackoverflow.com/questions/3527933/move-an-email-in-gmail-with-python-and-imaplib?rq=1

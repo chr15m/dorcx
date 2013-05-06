@@ -93,4 +93,5 @@ class ImapDb:
 		except socket.gaierror, e:
 			raise ImapDbException(["INBOX-READ", e.message])
 	
-	def get_folder_list()
+	def get_folder_list(self):
+		pass

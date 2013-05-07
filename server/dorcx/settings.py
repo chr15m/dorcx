@@ -170,12 +170,25 @@ LOGGING = {
 			'()': 'django.utils.log.RequireDebugFalse'
 		}
 	},
+	'formatters': {
+		'verbose': {
+			'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+		},
+		'simple': {
+			'format': '%(levelname)s %(message)s'
+		},
+	},
 	'handlers': {
 		'mail_admins': {
 			'level': 'ERROR',
 			'filters': ['require_debug_false'],
 			'class': 'django.utils.log.AdminEmailHandler'
-		}
+		},
+		'console': {
+			'level': 'DEBUG',
+			'class': 'logging.StreamHandler',
+			'formatter': 'simple'
+		},
 	},
 	'loggers': {
 		'django.request': {
@@ -189,3 +202,8 @@ LOGGING = {
 if os.path.isfile(os.path.join(PROJECT_ROOT, "settings_local.py")):
 	from settings_local import *
 
+
+if DEBUG:
+	# make all loggers use the console.
+	for logger in LOGGING['loggers']:
+		LOGGING['loggers'][logger]['handlers'] = ['console']

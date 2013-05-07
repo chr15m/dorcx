@@ -12,18 +12,17 @@ urlpatterns = patterns('',
 	# Serve the index page
 	url(r'^$', direct_to_template, {"template": "client/index.html"}, name='home'),
 	
-	# JSON API endpoings
+	# JSON API endpoints
 	url(r'^signin$', "dorcx.views.signin", name="signin"),
+	url(r'^signout$', "dorcx.views.signout", name="signout"),
 	url(r'^create-missing-folders$', "dorcx.views.create_missing_folders", name="create_missing_folders"),
 	url(r'^authenticate$', "dorcx.views.authenticate", name="authenticate"),
+	url(r'^get-contacts$', "dorcx.views.get_contacts", name="get_contacts"),
+	url(r'^find-new-contacts$', "dorcx.views.find_new_contacts", name="find_new_contacts"),
 	
-	# Examples:
-	# url(r'^$', 'dorcx.views.home', name='home'),
-	# url(r'^dorcx/', include('dorcx.foo.urls')),
-
 	# Uncomment the admin/doc line below to enable admin documentation:
 	# url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
-
+	
 	# Uncomment the next line to enable the admin:
 	# url(r'^admin/', include(admin.site.urls)),
 )

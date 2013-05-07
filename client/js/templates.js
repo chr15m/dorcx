@@ -6,6 +6,8 @@ var _dorcx_template_files = [
 	"signed-in-setup-folders.html",
 	"do-not-continue.html",
 	"need-more-folders.html",
+	"contact.html",
+	"signed-out.html",
 	"main.html"
 ];
 

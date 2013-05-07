@@ -1,6 +1,6 @@
-// code to manage the user interface
+// when the app is first loaded in the browser this code runs
 $(function() {
-	// once the templates are loaded hide the loader and show the login form
+	// once the templates are loaded
 	$(document).bind("templates_loaded", function(ev) {
 		// test to see if this client is already authenticated
 		$.get("authenticate", function(data) {
@@ -11,7 +11,7 @@ $(function() {
 				$("#loader").hide();
 				$("#content").html(template["login-form.html"]);
 			} else {
-				// load up the main interface
+				// otherwise load up the main interface
 				_dorcx_main();
 			}
 		}, "json");

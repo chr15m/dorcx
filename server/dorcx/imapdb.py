@@ -3,6 +3,8 @@
 import imaplib
 import re
 import socket
+from email.parser import HeaderParser
+from email.utils import getaddresses
 
 total_re = re.compile("MESSAGES (?P<total>\d+)")
 unread_re = re.compile("UNSEEN (?P<unread>\d+)")
@@ -13,6 +15,9 @@ FOLDERS = ["dorcx/", "dorcx/config", "dorcx/inbox", "dorcx/public/", "dorcx/publ
 
 # TODO: persist multiple imap connections in some sensible way
 # TODO: unit tests
+
+total_re = re.compile("MESSAGES (?P<total>\d+)")
+unread_re = re.compile("UNSEEN (?P<unread>\d+)")
 
 class ImapDbException(Exception):
 	pass
@@ -66,7 +71,7 @@ class ImapDb:
 			  '(\\NoInferiors \\UnMarked) "/" "dorcx/config"'])"""
 		# see if the folders we want match those on the server
 		want = set([f.rstrip("/") for f in FOLDERS])
-		have = set([f.split(" ")[-1][1:-1] for f in result[1]])
+		have = set(folder_names_from_folder_list(result))
 		need = list(want - have)
 		return {"missing_folders": need, "all_missing": len(need) == len(FOLDERS)}
 	
@@ -87,11 +92,45 @@ class ImapDb:
 		try:
 			for b in boxes:
 				r = self.m.status(b, '(UNSEEN MESSAGES)')[1][0]
-				total = total_re.search(r).groupdict()["total"]
-				unread = unread_re.search(r).groupdict()["unread"]
-				yield b,[unread, total]
+				total = total_re.search(r)
+				unread = unread_re.search(r)
+				yield b,[unread, total and total.groupdict()["total"] or 0, unread and unread.groupdict()["unread"] or 0]
 		except socket.gaierror, e:
 			raise ImapDbException(["INBOX-READ", e.message])
 	
 	def get_folder_list(self):
-		pass
+		# filter out undesireable folder names, dorcx folders, and hidden folders
+		return [f for f in folder_names_from_folder_list(self.m.list()) if not (
+			f.lower() in ["trash", "templates", "drafts", "spam", "junk"]
+			or f.startswith("dorcx")
+			or f.startswith(".")
+		)]
+	
+	def get_headers(self, folder, number):
+		print folder, number
+		self.m.select(folder, readonly=True)
+		msgs = []
+		count = int(self.get_unread_count([folder]).next()[1][1])
+		print count
+		# unread = unread_re.search(r).groupdict()["unread"]
+		for i in range(1, min(number, count)):
+			print "fetching", i
+			data = self.m.fetch(str(i), '(BODY[HEADER])')
+			header_data = data[1][0][1]
+			parser = HeaderParser()
+			msgs.append(parser.parsestr(header_data))
+		return msgs
+	
+def people_from_header(msg):
+	# parse the realnames and emails out of various fields of a message
+	return getaddresses(
+		msg.get_all('to', []) +
+		msg.get_all('cc', []) +
+		msg.get_all('from', []) + 
+		msg.get_all('resent-to', []) +
+		msg.get_all('resent-cc', []) +
+		msg.get_all('envelope-to', [])
+	)
+
+def folder_names_from_folder_list(flist):
+	return [f.split(" ")[-1][1:-1] for f in flist[1]]

@@ -56,8 +56,8 @@ class ImapDb:
 			raise ImapDbException(["AUTH", e.message])
 	
 	def get_missing_folder_list(self):
-		result = self.m.list("dorcx*")
-		""" 	In [4]: d.m.list("dorcx*")
+		result = self.m.list("dorcx/%")
+		""" 	In [4]: d.m.list("dorcx/%")
 			Out[4]: 
 			('OK',
 			 ['(\\Noselect \\HasChildren) "/" "dorcx"',
@@ -133,4 +133,5 @@ def people_from_header(msg):
 	)
 
 def folder_names_from_folder_list(flist):
-	return [f.split(" ")[-1][1:-1] for f in flist[1]]
+	return [f.split(" ")[-1][1:-1] for f in flist[1] if f]
+

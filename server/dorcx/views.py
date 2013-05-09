@@ -58,19 +58,21 @@ def find_new_contacts(request):
 	for f in folders:
 		# get the first 100 headers of each folder
 		for m in d.get_headers(f, 30):
+			print m
 			# TODO: cull out lists using X-List header
 			people = people_from_header(m)
 			for p in people:
 				if contacts_by_email.has_key(p[1]):
 					contacts_by_email[p[1]]["count"] += 1
+					
 				else:
 					contacts.append({
 						"folder": f,
 						"email": p[1],
 						"name": p[0],
-						"gravatar": md5(p[1]).hexdigest(),
 						"count": 1
 					})
 					contacts_by_email[p[1]] = contacts[-1]
+	contacts.sort(lambda a, b: cmp(b["count"], a["count"]))
 	return contacts
 

@@ -22,7 +22,27 @@ function _dorcx_main() {
 		$("#new-contacts").html("");
 		// fill the new-contacts box with the contacts we have found
 		for (var c=0; c<contacts.length; c++) {
-			$("#new-contacts").append(Mustache.render(template["contact.html"], contacts[c]));
+			var contact = contacts[c];
+			var contacthtml = $(Mustache.render(template["contact.html"], contacts[c]));
+			$("#new-contacts").append(contacthtml);
+			
+			var emailparts = contact.email.split("@");
+			// use the right avatar
+			if (emailparts[1] == "gmail.com") {
+				contact.avatar_url = get_avatar_from_service("google", emailparts[0], 128);
+			} else {
+				contact.avatar_url = get_avatar_from_service("gravatar", md5(contact.email), 128);
+			}
+			// if we get a 404 just fall back to the gravatar one
+			contacthtml.find("img.avatar").error(function(ev) {
+				contact.avatar_url = get_avatar_from_service("gravatar", md5(contact.email), 128);
+				$(this).attr("src", contact.avatar_url);
+			}).attr("src", contact.avatar_url);
 		}
+		// bind an error function to the avatars to just load the gravatar if all else fails
+		$(document).on('error', 'img.avatar', function(ev) {
+			console.log("replaced");
+			this.src = get_avatar_from_service("gravatar", md5($(this).attr("email")), 128);
+		});
 	}, "json");
 }

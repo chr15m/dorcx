@@ -52,7 +52,7 @@ $(function() {
 				$("#login-form-submit").attr('disabled', null);
 			} else {
 				// if the user is missing some folders, tell them we need to create them
-				if (data["missing_folders"].length) {
+				/*if (data["missing_folders"].length) {
 					if (data["all_missing"]) {
 						// show the user the message explaining why we need to set up folders
 						$("#content").html(template["signed-in-setup-folders.html"]);
@@ -60,10 +60,10 @@ $(function() {
 						// tell the user the folders they are missing that we want to create
 						$("#content").html(Mustache.render(template["need-more-folders.html"], data));
 					}
-				} else {
+				} else {*/
 					// load up the main interface
 					_dorcx_main();
-				}
+				// }
 			}
 		}, "json");
 		

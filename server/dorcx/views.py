@@ -55,7 +55,6 @@ def find_new_contacts(request):
 	# get a list of folders we can search through
 	# TODO search more folders than these ones in some kind of asynchronous way
 	folders = [f for f in d.get_rich_folder_list()]
-	print folders
 	for f in folders:
 		# get the first 100 headers of each folder
 		for m in d.get_headers(f, 30):
@@ -73,7 +72,5 @@ def find_new_contacts(request):
 						"count": 1
 					})
 					contacts_by_email[p[1]] = contacts[-1]
-	from pprint import pprint
-	pprint(contacts)
 	return contacts
 

@@ -122,19 +122,14 @@ class ImapDb:
 		]]
 	
 	def get_headers(self, folder, number):
-		print folder, number
 		# choose the folder we want to list
 		self.m.select(folder)
 		# fetch a list of all message IDs in this mailbox
 		messages = self.m.search(None, "ALL")[1][0].split(" ")
-		print "message ids:", messages
 		# now just pop the headers of the last number of them
 		all_headers = self.m.fetch(",".join(messages[-number:-1]), '(BODY[HEADER])')
-		print "all:", len(all_headers)
 		# parse them all and return
 		if all_headers[0] == "OK":
-			#print "HEADERS:"
-			#pprint([h[1] for h in all_headers[1] if len(h) > 1])
 			return [HeaderParser().parsestr(h[1]) for h in all_headers[1] if len(h) > 1]
 		else:
 			return []

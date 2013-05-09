@@ -5,19 +5,21 @@ import re
 import socket
 from email.parser import HeaderParser
 from email.utils import getaddresses
+from pprint import pprint
 
 total_re = re.compile("MESSAGES (?P<total>\d+)")
 unread_re = re.compile("UNSEEN (?P<unread>\d+)")
 
 BASIC_EMAIL_REGEX = re.compile(r"[^@]+@[^@]+\.[^@]+")
 
-FOLDERS = ["dorcx/", "dorcx/config", "dorcx/inbox", "dorcx/public/", "dorcx/public/config", "dorcx/public/outbox", "dorcx/private/", "dorcx/private/config", "dorcx/private/outbox"]
+FOLDERS = ["dorcx", "dorcx/config", "dorcx/inbox", "dorcx/public/", "dorcx/public/config", "dorcx/public/outbox", "dorcx/private/", "dorcx/private/config", "dorcx/private/outbox"]
 
 # TODO: persist multiple imap connections in some sensible way
 # TODO: unit tests
 
 total_re = re.compile("MESSAGES (?P<total>\d+)")
 unread_re = re.compile("UNSEEN (?P<unread>\d+)")
+list_response_re = re.compile(r'\((?P<flags>.*?)\) "(?P<delimiter>.*)" (?P<name>.*)')
 
 class ImapDbException(Exception):
 	pass
@@ -98,29 +100,45 @@ class ImapDb:
 		except socket.gaierror, e:
 			raise ImapDbException(["INBOX-READ", e.message])
 	
-	def get_folder_list(self):
+	def get_rich_folder_list(self):
 		# filter out undesireable folder names, dorcx folders, and hidden folders
-		return [f for f in folder_names_from_folder_list(self.m.list()) if not (
-			f.lower() in ["trash", "templates", "drafts", "spam", "junk"]
-			or f.startswith("dorcx")
-			or f.startswith(".")
-		)]
+		#return [f for f in folder_names_from_folder_list(self.m.list()) if not (
+		#	f.lower() in ["trash", "templates", "drafts", "spam", "junk", "dirty"]
+		#	or f.startswith("dorcx")
+		#	or f.startswith(".")
+		#)]
+		return [f for f in folder_names_from_folder_list(self.m.list()) if f.lower() in [
+			"sent",
+			"inbox",
+			"archive",
+			"archives",
+			"important",
+			"sent mail",
+			"[gmail]/sent mail",
+			"[gmail]/starred",
+			"[gmail]/important",
+			"[gmail]/all mail",
+			"all mail"
+		]]
 	
 	def get_headers(self, folder, number):
 		print folder, number
-		self.m.select(folder, readonly=True)
-		msgs = []
-		count = int(self.get_unread_count([folder]).next()[1][1])
-		print count
-		# unread = unread_re.search(r).groupdict()["unread"]
-		for i in range(1, min(number, count)):
-			print "fetching", i
-			data = self.m.fetch(str(i), '(BODY[HEADER])')
-			header_data = data[1][0][1]
-			parser = HeaderParser()
-			msgs.append(parser.parsestr(header_data))
-		return msgs
-	
+		# choose the folder we want to list
+		self.m.select(folder)
+		# fetch a list of all message IDs in this mailbox
+		messages = self.m.search(None, "ALL")[1][0].split(" ")
+		print "message ids:", messages
+		# now just pop the headers of the last number of them
+		all_headers = self.m.fetch(",".join(messages[-number:-1]), '(BODY[HEADER])')
+		print "all:", len(all_headers)
+		# parse them all and return
+		if all_headers[0] == "OK":
+			#print "HEADERS:"
+			#pprint([h[1] for h in all_headers[1] if len(h) > 1])
+			return [HeaderParser().parsestr(h[1]) for h in all_headers[1] if len(h) > 1]
+		else:
+			return []
+
 def people_from_header(msg):
 	# parse the realnames and emails out of various fields of a message
 	return getaddresses(
@@ -133,5 +151,5 @@ def people_from_header(msg):
 	)
 
 def folder_names_from_folder_list(flist):
-	return [f.split(" ")[-1][1:-1] for f in flist[1] if f]
+	return [list_response_re.match(f).group("name").strip('"') for f in flist[1] if f]
 

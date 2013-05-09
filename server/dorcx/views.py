@@ -50,23 +50,30 @@ def get_contacts(request):
 @catch_imapdb_errors
 def find_new_contacts(request):
 	contacts = []
+	contacts_by_email = {}
 	d = login(request)
 	# get a list of folders we can search through
 	# TODO search more folders than these ones in some kind of asynchronous way
-	folders = [f for f in d.get_folder_list() if f.lower() in ["inbox", "archive", "archives", "sent"]]
+	folders = [f for f in d.get_rich_folder_list()]
 	print folders
 	for f in folders:
 		# get the first 100 headers of each folder
-		for m in d.get_headers(f, 10):
+		for m in d.get_headers(f, 30):
 			# TODO: cull out lists using X-List header
 			people = people_from_header(m)
 			for p in people:
-				contacts.append({
-					"folder": f,
-					"email": p[1],
-					"name": p[0],
-					"gravatar": md5(p[1]).hexdigest()
-				})
+				if contacts_by_email.has_key(p[1]):
+					contacts_by_email[p[1]]["count"] += 1
+				else:
+					contacts.append({
+						"folder": f,
+						"email": p[1],
+						"name": p[0],
+						"gravatar": md5(p[1]).hexdigest(),
+						"count": 1
+					})
+					contacts_by_email[p[1]] = contacts[-1]
 	from pprint import pprint
 	pprint(contacts)
 	return contacts
+

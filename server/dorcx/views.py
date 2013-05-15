@@ -57,7 +57,7 @@ def find_new_contacts(request):
 	folders = [f for f in d.get_rich_folder_list()]
 	for f in folders:
 		# get the first 100 headers of each folder
-		for m in d.get_headers(f, 30):
+		for m in d.get_headers(f, 500):
 			print m
 			# TODO: cull out lists using X-List header
 			people = people_from_header(m)

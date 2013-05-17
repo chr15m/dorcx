@@ -14,7 +14,7 @@ BASIC_EMAIL_REGEX = re.compile(r"[^@]+@[^@]+\.[^@]+")
 
 FOLDERS = ["dorcx", "dorcx/config", "dorcx/inbox", "dorcx/public/", "dorcx/public/config", "dorcx/public/outbox", "dorcx/private/", "dorcx/private/config", "dorcx/private/outbox"]
 
-# TODO: persist multiple imap connections in some sensible way
+# TODO: persist multiple imap connections in some sensible way (check out imap proxy's like perdition)
 # TODO: unit tests
 
 total_re = re.compile("MESSAGES (?P<total>\d+)")
@@ -125,9 +125,9 @@ class ImapDb:
 		# choose the folder we want to list
 		self.m.select(folder)
 		# fetch a list of all message IDs in this mailbox
-		messages = self.m.search(None, "ALL")[1][0].split(" ")
+		messages = self.m.uid("search", None, "ALL")[1][0].split(" ")
 		# now just pop the headers of the last number of them
-		all_headers = self.m.fetch(",".join(messages[-number:-1]), '(BODY[HEADER])')
+		all_headers = self.m.uid("fetch", ",".join(messages[-number:-1]), '(BODY[HEADER])')
 		# parse them all and return
 		if all_headers[0] == "OK":
 			return [HeaderParser().parsestr(h[1]) for h in all_headers[1] if len(h) > 1]

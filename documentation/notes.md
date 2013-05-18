@@ -4,7 +4,25 @@
 
 ## IMAP ##
 
-[Perdition](http://horms.net/projects/perdition/) and [imapproxy](http://www.imapproxy.org) are programs that will cache IMAP connections, hence improving performance of webmail clients.
+the RFC:
+
+ * http://tools.ietf.org/search/rfc5256
+
+imaplib python reference:
+
+ * http://docs.python.org/2/library/imaplib.html
+
+imap proxying:
+
+ * [Perdition](http://horms.net/projects/perdition/) and [imapproxy](http://www.imapproxy.org) are programs that will cache IMAP connections, hence improving performance of webmail clients.
+
+Useful blog post including how I found out about IMAPClient:
+
+ * http://bruno.im/2010/jul/29/europython-talk-python-and-imap-protocol/
+
+Whole bunch of great demo code for python imap and gmail:
+
+ * http://yuji.wordpress.com/2011/06/22/python-imaplib-imap-example-with-gmail/
 
 Great post about whether or not to use a database for webmail:
 

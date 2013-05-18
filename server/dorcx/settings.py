@@ -155,6 +155,10 @@ AUTHENTICATION_BACKENDS = (
 	'django.contrib.auth.backends.ModelBackend',
 )
 
+### Stuff specific to dorcx ###
+
+MESSAGE_HISTORY_CACHE_SIZE = 500
+
 # AUTH_PROFILE_MODULE = "PSUTOOL.Person"
 
 # A sample logging configuration. The only tangible logging

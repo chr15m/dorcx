@@ -1,6 +1,9 @@
 from md5 import md5
+from email.utils import parseaddr
 
 from django.contrib.auth import logout
+
+import settings
 
 from json_encode import json_api
 
@@ -57,14 +60,12 @@ def find_new_contacts(request):
 	folders = [f for f in d.get_rich_folder_list()]
 	for f in folders:
 		# get the first 100 headers of each folder
-		for m in d.get_headers(f, 500):
-			print m
+		for m in d.get_headers(f, settings.MESSAGE_HISTORY_CACHE_SIZE):
 			# TODO: cull out lists using X-List header
 			people = people_from_header(m)
 			for p in people:
 				if contacts_by_email.has_key(p[1]):
 					contacts_by_email[p[1]]["count"] += 1
-					
 				else:
 					contacts.append({
 						"folder": f,
@@ -76,3 +77,20 @@ def find_new_contacts(request):
 	contacts.sort(lambda a, b: cmp(b["count"], a["count"]))
 	return contacts
 
+@json_api
+@catch_imapdb_errors
+def get_threads(request):
+	threads =[]
+	d = login(request)
+	folders = [f for f in d.get_rich_folder_list()]
+	for f in folders:
+		for m in d.get_threads(f, settings.MESSAGE_HISTORY_CACHE_SIZE):
+			people = people_from_header(m)
+			threads.append({
+				"name": parseaddr(m["From"])[0],
+				"email": parseaddr(m["From"])[1],
+				"people": [{"name": p[0], "email": p[1]} for p in people],
+				"subject": m["Subject"],
+				"date": m["Date"]
+			})
+	return threads

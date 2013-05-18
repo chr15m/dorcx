@@ -20,6 +20,7 @@ FOLDERS = ["dorcx", "dorcx/config", "dorcx/inbox", "dorcx/public/", "dorcx/publi
 total_re = re.compile("MESSAGES (?P<total>\d+)")
 unread_re = re.compile("UNSEEN (?P<unread>\d+)")
 list_response_re = re.compile(r'\((?P<flags>.*?)\) "(?P<delimiter>.*)" (?P<name>.*)')
+plus_email_re = re.compile("\+.*\@")
 
 class ImapDbException(Exception):
 	pass
@@ -56,6 +57,10 @@ class ImapDb:
 			self.m.login(username, password)
 		except self.m.error, e:
 			raise ImapDbException(["AUTH", e.message])
+		# store these useful variables for later
+		self.email = email
+		self.username = username
+		self.domain = domain
 	
 	def get_missing_folder_list(self):
 		result = self.m.list("dorcx/%")
@@ -127,12 +132,34 @@ class ImapDb:
 		# fetch a list of all message IDs in this mailbox
 		messages = self.m.uid("search", None, "ALL")[1][0].split(" ")
 		# now just pop the headers of the last number of them
-		all_headers = self.m.uid("fetch", ",".join(messages[-number:-1]), '(BODY[HEADER])')
+		all_headers = self.m.uid("fetch", ",".join(messages[-number:]), '(BODY[HEADER] X-GM-THRID UID X-GM-MSGID)')
 		# parse them all and return
 		if all_headers[0] == "OK":
 			return [HeaderParser().parsestr(h[1]) for h in all_headers[1] if len(h) > 1]
 		else:
 			return []
+	
+	def get_threads(self, folder, number):
+		threads = []
+		headers = self.get_headers(folder, number)
+		for h in headers:
+			p = remove_duplicate_people(exclude_email(people_from_header(h), self.email))
+			if len(p) > 1:
+				threads.append(h)
+		return threads
+		
+		# choose the folder we want to list
+		#self.m.select(folder)
+		# fetch a list of all message IDs in this mailbox
+		#messages = self.m.uid("thread", "REFERENCES", "UTF-8", "ALL")[1][0].split(" ")
+		#print messages
+		# now just pop the headers of the last number of them
+		#all_headers = self.m.uid("fetch", ",".join(messages[-number:-1]), '(BODY[HEADER])')
+		# parse them all and return
+		#if all_headers[0] == "OK":
+		#	return [HeaderParser().parsestr(h[1]) for h in all_headers[1] if len(h) > 1]
+		#else:
+		#	return []
 
 def people_from_header(msg):
 	# parse the realnames and emails out of various fields of a message
@@ -145,6 +172,17 @@ def people_from_header(msg):
 		msg.get_all('envelope-to', [])
 	)
 
+def exclude_email(email_list, check):
+	return [e for e in email_list if plus_email_re.sub("@", e[1]).lower() != check.lower()]
+
+def remove_duplicate_people(email_list):
+	emails_only = [e[1] for e in email_list]
+	no_dup_list = []
+	for e in email_list:
+		if not e[1] in [d[1] for d in no_dup_list]:
+			no_dup_list.append(e)
+	return no_dup_list
+
 def folder_names_from_folder_list(flist):
 	return [list_response_re.match(f).group("name").strip('"') for f in flist[1] if f]
-
+	

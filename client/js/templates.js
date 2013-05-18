@@ -7,6 +7,7 @@ var _dorcx_template_files = [
 	"do-not-continue.html",
 	"need-more-folders.html",
 	"contact.html",
+	"thread.html",
 	"signed-out.html",
 	"main.html"
 ];

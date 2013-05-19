@@ -85,12 +85,15 @@ def get_threads(request):
 	folders = [f for f in d.get_rich_folder_list()]
 	for f in folders:
 		for m in d.get_threads(f, settings.MESSAGE_HISTORY_CACHE_SIZE):
-			people = people_from_header(m)
+			header = m["header"]
+			people = people_from_header(header)
 			threads.append({
-				"name": parseaddr(m["From"])[0],
-				"email": parseaddr(m["From"])[1],
+				"name": parseaddr(header["From"])[0],
+				"email": parseaddr(header["From"])[1],
 				"people": [{"name": p[0], "email": p[1]} for p in people],
-				"subject": m["Subject"],
-				"date": m["Date"]
+				"subject": header["Subject"],
+				"date": header["Date"],
+				"uid": m.get("X-GM-MSGID", m["UID"]),
+				"raw_header": m["BODY[HEADER]"]
 			})
 	return threads

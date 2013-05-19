@@ -1,35 +1,27 @@
 #!/usr/bin/python
 
-import imaplib
 import re
 import socket
 from email.parser import HeaderParser
 from email.utils import getaddresses
-from pprint import pprint
 
-total_re = re.compile("MESSAGES (?P<total>\d+)")
-unread_re = re.compile("UNSEEN (?P<unread>\d+)")
-
-BASIC_EMAIL_REGEX = re.compile(r"[^@]+@[^@]+\.[^@]+")
-
-FOLDERS = ["dorcx", "dorcx/config", "dorcx/inbox", "dorcx/public/", "dorcx/public/config", "dorcx/public/outbox", "dorcx/private/", "dorcx/private/config", "dorcx/private/outbox"]
+from imapclient import IMAPClient
 
 # TODO: persist multiple imap connections in some sensible way (check out imap proxy's like perdition)
 # TODO: unit tests
 
-total_re = re.compile("MESSAGES (?P<total>\d+)")
-unread_re = re.compile("UNSEEN (?P<unread>\d+)")
-list_response_re = re.compile(r'\((?P<flags>.*?)\) "(?P<delimiter>.*)" (?P<name>.*)')
+basic_email_re = re.compile(r"[^@]+@[^@]+\.[^@]+")
 plus_email_re = re.compile("\+.*\@")
+noreply_email_re = re.compile(".*?not{0,1}.{0,1}reply@.*?", flags=re.IGNORECASE)
 
 class ImapDbException(Exception):
 	pass
 
-class ImapDb:
+class ImapDb(IMAPClient):
 	""" Communicates with the current user's IMAP box, manages the dorcx contents, treats an IMAP mailbox like a database. """
 	def __init__(self, email, password, username=None, domain=None, use_ssl=True):
 		# validate email
-		if BASIC_EMAIL_REGEX.match(email):
+		if basic_email_re.match(email):
 			emailparts = email.split("@")
 		else:
 			raise ImapDbException(["EMAIL-VALIDATION"])
@@ -42,77 +34,33 @@ class ImapDb:
 		# TODO: on failure automatically try various ways of connecting (Non-SSL, common server subdomains, etc.)
 		# try to connect to the IMAP server
 		# TODO: timeout? if you incorrectly connect to some servers with no SSL they hang
-		try:
-			if use_ssl:
-				self.m = imaplib.IMAP4_SSL(domain)
-			else:
-				self.m = imaplib.IMAP4(domain)
-		except socket.gaierror, e:
-			raise ImapDbException(["CONNECTION", e.message])
-		except socket.error, e:
-			raise ImapDbException(["CONNECTION", e.message])
-		# TODO: arg? ImapDbException: ['AUTH', 'Maximum number of connections from user+IP exceeded (mail_max_userip_connections)']
+		IMAPClient.__init__(self, domain, use_uid=True, ssl=use_ssl)
 		# try to log in with the username and password provided
 		try:
-			self.m.login(username, password)
-		except self.m.error, e:
+			self.login(username, password)
+		except self.error, e:
 			raise ImapDbException(["AUTH", e.message])
+		# cache the capabilities of the server we're connecting to
+		self.capabilities()
 		# store these useful variables for later
 		self.email = email
 		self.username = username
 		self.domain = domain
+		# figure out which folder listing algorithm to use
+		# ** Gmail have deprecated XLIST but this code might be useful on some servers later **
+		# self.list_folders = ("XLIST" in self.capabilities() and self.xlist_folders or self.list_folders)
 	
-	def get_missing_folder_list(self):
-		result = self.m.list("dorcx/%")
-		""" 	In [4]: d.m.list("dorcx/%")
-			Out[4]: 
-			('OK',
-			 ['(\\Noselect \\HasChildren) "/" "dorcx"',
-			  '(\\NoInferiors \\UnMarked) "/" "dorcx/inbox"',
-			  '(\\Noselect \\HasChildren) "/" "dorcx/public"',
-			  '(\\NoInferiors \\UnMarked) "/" "dorcx/public/outbox"',
-			  '(\\NoInferiors \\UnMarked) "/" "dorcx/public/config"',
-			  '(\\Noselect \\HasChildren) "/" "dorcx/private"',
-			  '(\\NoInferiors \\UnMarked) "/" "dorcx/private/outbox"',
-			  '(\\NoInferiors \\UnMarked) "/" "dorcx/private/config"',
-			  '(\\NoInferiors \\UnMarked) "/" "dorcx/config"'])"""
-		# see if the folders we want match those on the server
-		want = set([f.rstrip("/") for f in FOLDERS])
-		have = set(folder_names_from_folder_list(result))
-		need = list(want - have)
-		return {"missing_folders": need, "all_missing": len(need) == len(FOLDERS)}
+	def get_dorcx_folder_list(self):
+		return self.list_folders("dorcx/%")
 	
-	def setup_folders(self):
+	def create_folder(self):
 		""" Sets up the dorcx subfolder and its subfolders - config, private, public. """
-		results = []
-		for d in FOLDERS:
-			result = self.m.create(d)
-			# if there was an error result ("NO") and there were errors other than "ALREADYEXISTS" errors then throw
-			if result and len(result) and result[0] == 'NO' and len([r for r in result[1] if "ALREADYEXISTS" in r]) != len(result[1]):
-				raise ImapDbException(["BOX-CREATION", result])
-			else:
-				results.append([d, result])
-		return {"created_folders": results}
-	
-	def get_unread_count(self, boxes=['INBOX']):
-		""" Returns unread count for the user's actual INBOX folder. """
-		try:
-			for b in boxes:
-				r = self.m.status(b, '(UNSEEN MESSAGES)')[1][0]
-				total = total_re.search(r)
-				unread = unread_re.search(r)
-				yield b,[unread, total and total.groupdict()["total"] or 0, unread and unread.groupdict()["unread"] or 0]
-		except socket.gaierror, e:
-			raise ImapDbException(["INBOX-READ", e.message])
+		# have to do this differently for gmail/normal as nested folders might not be created correctly on gmail
+		return self.create_folder(d)
 	
 	def get_rich_folder_list(self):
-		# filter out undesireable folder names, dorcx folders, and hidden folders
-		#return [f for f in folder_names_from_folder_list(self.m.list()) if not (
-		#	f.lower() in ["trash", "templates", "drafts", "spam", "junk", "dirty"]
-		#	or f.startswith("dorcx")
-		#	or f.startswith(".")
-		#)]
-		return [f for f in folder_names_from_folder_list(self.m.list()) if f.lower() in [
+		""" Return the good, content rich folders in this user's mailbox if they are named as e.g. INBOX, Archive, etc. or if they have a special flag saying they are useful. """
+		return [f[2] for f in self.list_folders() if f[2].lower() in [
 			"sent",
 			"inbox",
 			"archive",
@@ -124,42 +72,35 @@ class ImapDb:
 			"[gmail]/important",
 			"[gmail]/all mail",
 			"all mail"
-		]]
+		] or len(
+			[x for x in ("\\All", "\\Sent", "\\Flagged", "\\Important") if x in f[0]]
+		)]
 	
 	def get_headers(self, folder, number):
 		# choose the folder we want to list
-		self.m.select(folder)
+		self.select_folder(folder, readonly=True)
 		# fetch a list of all message IDs in this mailbox
-		messages = self.m.uid("search", None, "ALL")[1][0].split(" ")
+		messages = self.search(["ALL"])
 		# now just pop the headers of the last number of them
-		all_headers = self.m.uid("fetch", ",".join(messages[-number:]), '(BODY[HEADER] X-GM-THRID UID X-GM-MSGID)')
+		all_headers = self.fetch(messages[-number:], ['BODY[HEADER]', 'UID'] + ("X-GM-EXT-1" in self.capabilities() and ['X-GM-MSGID', 'X-GM-THRID'] or []))
 		# parse them all and return
-		if all_headers[0] == "OK":
-			return [HeaderParser().parsestr(h[1]) for h in all_headers[1] if len(h) > 1]
-		else:
-			return []
+		for h in all_headers:
+			all_headers[h]["header"] = HeaderParser().parsestr(all_headers[h]["BODY[HEADER]"])
+			all_headers[h]["UID"] = h
+		return all_headers
 	
 	def get_threads(self, folder, number):
 		threads = []
+		# fetch all the recent rich headers
 		headers = self.get_headers(folder, number)
+		# now cruise through them finding ones that are between multiple people
 		for h in headers:
-			p = remove_duplicate_people(exclude_email(people_from_header(h), self.email))
-			if len(p) > 1:
-				threads.append(h)
+			p = remove_noreplies(remove_duplicate_people(exclude_email(people_from_header(headers[h]["header"]), self.email)))
+			if len(p) > 1 and not "list-id" in [k.lower() for k in headers[h]["header"].keys()]:
+				threads.append(headers[h])
+		# sort the messages by date
+		threads.sort(lambda a,b: cmp(a["header"]["Date"], b["header"]["Date"]))
 		return threads
-		
-		# choose the folder we want to list
-		#self.m.select(folder)
-		# fetch a list of all message IDs in this mailbox
-		#messages = self.m.uid("thread", "REFERENCES", "UTF-8", "ALL")[1][0].split(" ")
-		#print messages
-		# now just pop the headers of the last number of them
-		#all_headers = self.m.uid("fetch", ",".join(messages[-number:-1]), '(BODY[HEADER])')
-		# parse them all and return
-		#if all_headers[0] == "OK":
-		#	return [HeaderParser().parsestr(h[1]) for h in all_headers[1] if len(h) > 1]
-		#else:
-		#	return []
 
 def people_from_header(msg):
 	# parse the realnames and emails out of various fields of a message
@@ -183,6 +124,5 @@ def remove_duplicate_people(email_list):
 			no_dup_list.append(e)
 	return no_dup_list
 
-def folder_names_from_folder_list(flist):
-	return [list_response_re.match(f).group("name").strip('"') for f in flist[1] if f]
-	
+def remove_noreplies(email_list):
+	return [e for e in email_list if noreply_email_re.match(e[1]) is None]

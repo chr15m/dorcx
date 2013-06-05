@@ -38,7 +38,7 @@ class ImapDb(IMAPClient):
 		# try to log in with the username and password provided
 		try:
 			self.login(username, password)
-		except self.error, e:
+		except Exception, e:
 			raise ImapDbException(["AUTH", e.message])
 		# cache the capabilities of the server we're connecting to
 		self.capabilities()

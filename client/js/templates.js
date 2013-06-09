@@ -9,6 +9,7 @@ var _dorcx_template_files = [
 	"contact.html",
 	"thread.html",
 	"signed-out.html",
+	"posting.html",
 	"main.html"
 ];
 

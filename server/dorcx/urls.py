@@ -20,6 +20,7 @@ urlpatterns = patterns('',
 	url(r'^get-contacts$', "dorcx.views.get_contacts", name="get_contacts"),
 	url(r'^find-new-contacts$', "dorcx.views.find_new_contacts", name="find_new_contacts"),
 	url(r'^get-threads$', "dorcx.views.get_threads", name="get_threads"),
+	url(r'^post$', "dorcx.views.post", name="post"),
 	
 	# Uncomment the admin/doc line below to enable admin documentation:
 	# url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

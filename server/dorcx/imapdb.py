@@ -4,6 +4,8 @@ import re
 import socket
 from email.parser import HeaderParser
 from email.utils import getaddresses
+from email.message import Message
+from datetime import datetime
 
 from imapclient import IMAPClient
 
@@ -53,11 +55,6 @@ class ImapDb(IMAPClient):
 	def get_dorcx_folder_list(self):
 		return self.list_folders("dorcx/%")
 	
-	def create_folder(self):
-		""" Sets up the dorcx subfolder and its subfolders - config, private, public. """
-		# have to do this differently for gmail/normal as nested folders might not be created correctly on gmail
-		return self.create_folder(d)
-	
 	def get_rich_folder_list(self):
 		""" Return the good, content rich folders in this user's mailbox if they are named as e.g. INBOX, Archive, etc. or if they have a special flag saying they are useful. """
 		return [f[2] for f in self.list_folders() if f[2].lower() in [
@@ -101,6 +98,45 @@ class ImapDb(IMAPClient):
 		# sort the messages by date
 		threads.sort(lambda a,b: cmp(a["header"]["Date"], b["header"]["Date"]))
 		return threads
+	
+	def post(self, folder, subject="", body="", date=None, metadata=None):
+		folder_name = "dorcx/" + folder
+		# test if the folder exists already
+		folder_exists = len(self.list_folders(folder_name))
+		if not folder_exists:
+			# create it if it does not yet exist
+			result = self.create_folder(folder_name)
+			# In [10]: g.create_folder("dorcx/public")
+			# Out[10]: u'Success'
+			
+			# In [13]: i.create_folder("dorcx/public")
+			# Out[13]: u'Create completed.'
+
+			# In [9]: g.create_folder("dorcx/")
+			# Out[9]: u'[CANNOT] Ignoring hierarchy declaration (Success)'
+			
+			# fail raises:
+			# error: create failed: u'[ALREADYEXISTS] Mailbox exists.'
+		# now choose the folder so we can write our new post to it
+		self.select_folder(folder_name, readonly=False)
+		# create the post as a new email
+		m = Message()
+		m["From"] = self.email
+		# m["To"] = "public@dorcx.net"
+		m["Content-Type"] = "text/plain"
+		if subject:
+			m["Subject"] = subject
+		# TODO: use client's date with TZ info
+		# Javascript should use d.toUTCString() = "Tue, 22 Nov 2011 06:00:00 GMT"
+		# Javascript should use d.toString() = "Sun Jun 09 2013 16:21:47 GMT+0800 (WST)"
+		# djb nails it:
+		# http://cr.yp.to/immhf/date.html
+		# Date: 23 Dec 1995 19:25:43 -0000
+		#m["Date"] = 
+		if (body):
+			m.set_payload(body)
+		return {"posted": self.append(folder_name, m.as_string())}
+		# u'[APPENDUID 594556012 1] (Success)'
 
 def people_from_header(msg):
 	# parse the realnames and emails out of various fields of a message

@@ -97,3 +97,17 @@ def get_threads(request):
 				"raw_header": m["BODY[HEADER]"]
 			})
 	return threads
+
+@json_api
+@catch_imapdb_errors
+def post(request):
+	# post_type = request.POST.get("post-type")
+	print [(p, request.POST[p]) for p in request.POST]
+	body = request.POST.get("body")
+	subject = request.POST.get("subject")
+	# date = request.POST.get("date")
+	if body or subject:
+		d = login(request)
+		return d.post("public", subject, body)
+	else:
+		return {"error": "No body or subject supplied."}

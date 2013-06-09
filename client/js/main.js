@@ -1,6 +1,6 @@
 function _dorcx_main() {
 	// show the main interface
-	$("#content").html(template["main.html"]);
+	$("#content").html(Mustache.render(template["main.html"], {}, {"posting": template["posting.html"]}));
 	$("#loader").hide();
 	
 	// hook up the 'sign out' button

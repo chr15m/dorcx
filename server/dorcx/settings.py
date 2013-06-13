@@ -134,7 +134,7 @@ INSTALLED_APPS = (
 	'django.contrib.markup',
 	'django.contrib.admin',
 	'django.contrib.admindocs',
-	#'south',
+	'south',
 	'dorcx',
 )
 
@@ -159,7 +159,7 @@ AUTHENTICATION_BACKENDS = (
 
 MESSAGE_HISTORY_CACHE_SIZE = 500
 
-# AUTH_PROFILE_MODULE = "PSUTOOL.Person"
+# AUTH_PROFILE_MODULE = "dorcx.Person"
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to

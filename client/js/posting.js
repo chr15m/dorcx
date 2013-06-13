@@ -1,6 +1,6 @@
 $(function() {
 	$(document).on("click", "#send", function(ev) {
-		$.post('post', {"subject": $("#update").val()}, function(data) {
+		$.post('post', {"subject": $("#update").val(), "date": (new Date()).toString()}, function(data) {
 			if (data["error"]) {
 				// some kind of feedback here regarding the error
 				$("#update").css("border", "1px solid red");

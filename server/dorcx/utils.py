@@ -14,3 +14,6 @@ def catch_imapdb_errors(fn):
 			return {"error": e.message}
 	return new_fn
 
+def email_md5(email):
+	return md5.new("dorcx:" + email).hexdigest()
+

@@ -2,6 +2,7 @@
 
 import re
 import socket
+import dateutil.parser
 from email.parser import HeaderParser
 from email.utils import getaddresses
 from email.message import Message
@@ -15,6 +16,7 @@ from imapclient import IMAPClient
 basic_email_re = re.compile(r"[^@]+@[^@]+\.[^@]+")
 plus_email_re = re.compile("\+.*\@")
 noreply_email_re = re.compile(".*?not{0,1}.{0,1}reply@.*?", flags=re.IGNORECASE)
+append_response_re = re.compile("\[(?P<codes>.*)\] \({0,1}(?P<message>.*)\){0,1}$", flags=re.IGNORECASE)
 
 class ImapDbException(Exception):
 	pass
@@ -40,6 +42,7 @@ class ImapDb(IMAPClient):
 		# try to log in with the username and password provided
 		try:
 			self.login(username, password)
+		# IMAPClient.Error
 		except Exception, e:
 			raise ImapDbException(["AUTH", e.message])
 		# cache the capabilities of the server we're connecting to
@@ -126,17 +129,25 @@ class ImapDb(IMAPClient):
 		m["Content-Type"] = "text/plain"
 		if subject:
 			m["Subject"] = subject
-		# TODO: use client's date with TZ info
-		# Javascript should use d.toUTCString() = "Tue, 22 Nov 2011 06:00:00 GMT"
 		# Javascript should use d.toString() = "Sun Jun 09 2013 16:21:47 GMT+0800 (WST)"
-		# djb nails it:
-		# http://cr.yp.to/immhf/date.html
-		# Date: 23 Dec 1995 19:25:43 -0000
-		#m["Date"] = 
-		if (body):
+		msg_time = (date and dateutil.parser.parse(date) or None)
+		if msg_time:
+			# Date - 
+			# djb nails it:
+			# http://cr.yp.to/immhf/date.html
+			# Date: 23 Dec 1995 19:25:43 -0000
+			m["Date"] = msg_time.strftime("%a, %d %b %Y %X %z")
+		if body:
 			m.set_payload(body)
-		return {"posted": self.append(folder_name, m.as_string())}
+		response = self.append(folder_name, m.as_string(), msg_time=msg_time)
+		#print response
 		# u'[APPENDUID 594556012 1] (Success)'
+		# u'[APPENDUID 1370766584 11] Append completed.'
+		result = {"message": None, "codes": []}
+		if append_response_re.match(response):
+			result = append_response_re.match(response).groupdict()
+			result["codes"] = result["codes"].split(" ")
+		return result, m
 
 def people_from_header(msg):
 	# parse the realnames and emails out of various fields of a message

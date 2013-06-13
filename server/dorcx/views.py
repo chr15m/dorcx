@@ -18,7 +18,7 @@ def signin(request):
 		# save the login details in this user's session for future server commands
 		request.session["login_details"] = request.POST
 		d = login(request)
-		return d.get_missing_folder_list()
+		return d.capabilities()
 	else:
 		return {"error": ["BAD-PROTOCOL"]}
 
@@ -102,12 +102,15 @@ def get_threads(request):
 @catch_imapdb_errors
 def post(request):
 	# post_type = request.POST.get("post-type")
-	print [(p, request.POST[p]) for p in request.POST]
 	body = request.POST.get("body")
 	subject = request.POST.get("subject")
+	date = request.POST.get("date")
 	# date = request.POST.get("date")
 	if body or subject:
 		d = login(request)
-		return d.post("public", subject, body)
+		# make the actual post into our 'imapdb'
+		result, message = d.post("public", subject, body, date)
+		# cache the message produced on the end of the public feedcache for this user
+		return {"posted": result}
 	else:
 		return {"error": "No body or subject supplied."}

@@ -8,7 +8,7 @@ import settings
 from json_encode import json_api
 
 from utils import login, catch_imapdb_errors
-
+from feedcache import FeedCache
 from imapdb import people_from_header
 
 @json_api
@@ -105,12 +105,14 @@ def post(request):
 	body = request.POST.get("body")
 	subject = request.POST.get("subject")
 	date = request.POST.get("date")
+	folder = "public"
 	# date = request.POST.get("date")
 	if body or subject:
 		d = login(request)
 		# make the actual post into our 'imapdb'
-		result, message = d.post("public", subject, body, date)
-		# cache the message produced on the end of the public feedcache for this user
+		result, message = d.post(folder, subject, body, date)
+		# update the cache of messages we keep server side for this user in this folder
+		FeedCache(d.email, folder).synchronise(d)
 		return {"posted": result}
 	else:
 		return {"error": "No body or subject supplied."}

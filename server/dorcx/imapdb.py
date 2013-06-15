@@ -3,6 +3,7 @@
 import re
 import socket
 import dateutil.parser
+import email
 from email.parser import HeaderParser
 from email.utils import getaddresses
 from email.message import Message
@@ -76,11 +77,24 @@ class ImapDb(IMAPClient):
 			[x for x in ("\\All", "\\Sent", "\\Flagged", "\\Important") if x in f[0]]
 		)]
 	
-	def get_headers(self, folder, number):
+	def get_messages(self, message_ids):
+		response = self.fetch(message_ids, ['RFC822', 'FLAGS'])
+		messages = {}
+		for msgid, data in response.iteritems():
+			msg_string = data['RFC822']
+			if not u'\\Deleted' in data['FLAGS']:
+				msg = email.message_from_string(msg_string)
+				messages[msgid] = msg
+		return messages
+	
+	def list_folder(self, folder, dorcx_folder=False):
 		# choose the folder we want to list
-		self.select_folder(folder, readonly=True)
+		self.select_folder((dorcx_folder and "dorcx/" or "") + folder, readonly=True)
 		# fetch a list of all message IDs in this mailbox
-		messages = self.search(["ALL"])
+		return self.search(["NOT DELETED"])
+	
+	def get_headers(self, folder, number):
+		messages = self.list_folder(folder)
 		# now just pop the headers of the last number of them
 		all_headers = self.fetch(messages[-number:], ['BODY[HEADER]', 'UID'] + ("X-GM-EXT-1" in self.capabilities() and ['X-GM-MSGID', 'X-GM-THRID'] or []))
 		# parse them all and return

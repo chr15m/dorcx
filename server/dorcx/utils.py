@@ -1,3 +1,5 @@
+import md5
+
 from imapdb import ImapDb, ImapDbException
 
 def login(request):

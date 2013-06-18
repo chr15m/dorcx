@@ -112,7 +112,7 @@ def post(request):
 		# make the actual post into our 'imapdb'
 		result, message = d.post(folder, subject, body, date)
 		# update the cache of messages we keep server side for this user in this folder
-		FeedCache(d.email, folder).synchronise(d)
+		FeedCache(folder, email=d.email).synchronise(d)
 		return {"posted": result}
 	else:
 		return {"error": "No body or subject supplied."}

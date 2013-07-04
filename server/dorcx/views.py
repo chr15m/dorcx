@@ -31,12 +31,6 @@ def signout(request):
 
 @json_api
 @catch_imapdb_errors
-def create_missing_folders(request):
-	d = login(request)
-	return d.setup_folders()
-
-@json_api
-@catch_imapdb_errors
 def authenticate(request):
 	""" Simple test to see if the current session is authenticated or not. """
 	if request.session.get("login_details") is None:

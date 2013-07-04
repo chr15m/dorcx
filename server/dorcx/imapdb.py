@@ -11,7 +11,7 @@ from datetime import datetime
 
 from imapclient import IMAPClient
 
-# TODO: persist multiple imap connections in some sensible way (check out imap proxy's like perdition)
+# TODO: persist multiple imap connections in some sensible way (check out imap proxys like perdition)
 # TODO: unit tests
 
 basic_email_re = re.compile(r"[^@]+@[^@]+\.[^@]+")

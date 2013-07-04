@@ -77,6 +77,29 @@ class ImapDb(IMAPClient):
 			[x for x in ("\\All", "\\Sent", "\\Flagged", "\\Important") if x in f[0]]
 		)]
 	
+	def select_or_create_folder(self, folder, readonly=False):
+		folder_name = "dorcx/" + folder
+		# test if the folder exists already
+		folder_exists = len(self.list_folders(folder_name))
+		if not folder_exists:
+			# TODO: recursive create for gmail texting each folder level
+			# create it if it does not yet exist
+			result = self.create_folder(folder_name)
+			# In [10]: g.create_folder("dorcx/public")
+			# Out[10]: u'Success'
+			
+			# In [13]: i.create_folder("dorcx/public")
+			# Out[13]: u'Create completed.'
+
+			# In [9]: g.create_folder("dorcx/")
+			# Out[9]: u'[CANNOT] Ignoring hierarchy declaration (Success)'
+			
+			# fail raises:
+			# error: create failed: u'[ALREADYEXISTS] Mailbox exists.'
+		# now choose the folder
+		self.select_folder(folder_name, readonly=readonly)
+		return folder_name
+	
 	def get_messages(self, message_ids):
 		response = self.fetch(message_ids, ['RFC822', 'FLAGS'])
 		messages = {}
@@ -87,14 +110,9 @@ class ImapDb(IMAPClient):
 				messages[msgid] = msg
 		return messages
 	
-	def list_folder(self, folder, dorcx_folder=False):
-		# choose the folder we want to list
-		self.select_folder((dorcx_folder and "dorcx/" or "") + folder, readonly=True)
+	def get_headers(self, number):
 		# fetch a list of all message IDs in this mailbox
-		return self.search(["NOT DELETED"])
-	
-	def get_headers(self, folder, number):
-		messages = self.list_folder(folder)
+		messages = self.search(["NOT DELETED"])
 		# now just pop the headers of the last number of them
 		all_headers = self.fetch(messages[-number:], ['BODY[HEADER]', 'UID'] + ("X-GM-EXT-1" in self.capabilities() and ['X-GM-MSGID', 'X-GM-THRID'] or []))
 		# parse them all and return
@@ -105,8 +123,10 @@ class ImapDb(IMAPClient):
 	
 	def get_threads(self, folder, number):
 		threads = []
+		# choose the folder we want to list
+		self.select_folder(folder, readonly=True)
 		# fetch all the recent rich headers
-		headers = self.get_headers(folder, number)
+		headers = self.get_headers(number)
 		# now cruise through them finding ones that are between multiple people
 		for h in headers:
 			p = remove_noreplies(remove_duplicate_people(exclude_email(people_from_header(headers[h]["header"]), self.email)))
@@ -115,6 +135,38 @@ class ImapDb(IMAPClient):
 		# sort the messages by date
 		threads.sort(lambda a,b: cmp(a["header"]["Date"], b["header"]["Date"]))
 		return threads
+	
+	def get_contacts(self):
+		folder_name = self.select_or_create_folder("contacts")
+		return self.get_headers(0)
+	
+	def update_contacts(self, how_many):
+		contacts = []
+		contacts_by_email = {}
+		# get a list of folders we can search through
+		# TODO search more folders than these ones in some kind of asynchronous way
+		folders = [f for f in self.get_rich_folder_list()]
+		for folder in folders:
+			# choose the folder we want to list
+			self.select_folder(folder, readonly=True)
+			# get the first 100 headers of each folder
+			messages = self.get_headers(how_many)
+			#for m in messages:
+			#	# TODO: cull out lists using X-List header
+			#	people = people_from_header(messages[m])
+			#	for p in people:
+			#		if contacts_by_email.has_key(p[1]):
+			#			contacts_by_email[p[1]]["count"] += 1
+			#		else:
+			#			contacts.append({
+			#				"folder": folder,
+			#				"email": p[1],
+			#				"name": p[0],
+			#				"count": 1
+			#			})
+			#			contacts_by_email[p[1]] = contacts[-1]
+		contacts.sort(lambda a, b: cmp(b["count"], a["count"]))
+		return contacts
 	
 	def post(self, folder, subject="", body="", date=None, metadata=None):
 		folder_name = "dorcx/" + folder

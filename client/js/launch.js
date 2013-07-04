@@ -1,5 +1,8 @@
 // when the app is first loaded in the browser this code runs
 $(function() {
+	// in error.js always catch errors that come back via ajax and display the message
+	catch_ajax_errors();
+	
 	// once the templates are loaded
 	$(document).bind("templates_loaded", function(ev) {
 		// test to see if this client is already authenticated
@@ -38,34 +41,26 @@ $(function() {
 		// show the ajax loader next to the submit button
 		$("#login-form-submit-loader").show();
 		// remove any pending error messages
-		$("#login-error").html("");
+		$("#errors").html("");
 		
 		// trigger the post
 		$.post($(this).attr("action"), $(this).serialize(), function(data) {
 			console.log(data);
 			if (data["error"]) {
-				// display the error and the extra form fields to allow more detail.
-				$("#login-error").html(_dorcx_lookup_error(data));
+				// display the extra form fields to allow more detail.
 				$("#login-form-extra-details").show();
 				// re-enable the submit button and loader
 				$("#login-form-submit-loader").hide();
 				$("#login-form-submit").attr('disabled', null);
 			} else {
-				// if the user is missing some folders, tell them we need to create them
-				/*if (data["missing_folders"].length) {
-					if (data["all_missing"]) {
-						// show the user the message explaining why we need to set up folders
-						$("#content").html(template["signed-in-setup-folders.html"]);
-					} else {
-						// tell the user the folders they are missing that we want to create
-						$("#content").html(Mustache.render(template["need-more-folders.html"], data));
-					}
-				} else {*/
-					// load up the main interface
-					_dorcx_main();
-				// }
+				// load up the main interface
+				_dorcx_main();
 			}
-		}, "json");
+		}, "json").error(function() {
+			// re-enable the submit button and loader
+			$("#login-form-submit-loader").hide();
+			$("#login-form-submit").attr('disabled', null);
+		});
 		
 		return false;
 	});

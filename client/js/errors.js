@@ -12,6 +12,33 @@ function _dorcx_lookup_error(e) {
 	if (error_code) {
 		return _dorcx_error_messages[error_code];
 	} else {
-		return "Oops, some error occured we can't figure out.";
+		return "Oops, some error occured that we can't figure out.";
 	}
+}
+
+function add_error_message(msg) {
+	var error_message = $("<li>" + msg + "</li>");
+	// if the error message is clicked dissapear it
+	error_message.click(function() {
+		$(this).hide().remove();
+	});
+	$("#errors").append(error_message);
+	return error_message;
+}
+
+function catch_ajax_errors() {
+	// if we receive a genuine ajax error then report it
+	$(document).ajaxError(function(ev, request, settings) {
+		add_error_message("Sorry, there was a problem contacting the server.");
+	});
+	
+	// check all messages coming back from the server for the 'error' key and display
+	$(document).ajaxComplete(function(ev, request, settings) {
+		if (settings["dataType"] == "json") {
+			var data = $.parseJSON(request.responseText);
+			if (data["error"]) {
+				add_error_message(_dorcx_lookup_error(data));
+			}
+		}
+	});
 }

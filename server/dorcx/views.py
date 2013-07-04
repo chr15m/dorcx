@@ -9,7 +9,7 @@ from json_encode import json_api
 
 from utils import login, catch_imapdb_errors
 from feedcache import FeedCache
-from imapdb import people_from_header
+from imapdb import people_from_header, ImapDbException
 
 @json_api
 @catch_imapdb_errors
@@ -24,6 +24,7 @@ def signin(request):
 
 @json_api
 def signout(request):
+	del request.session["login_details"]
 	request.session.flush()
 	logout(request)
 	return True
@@ -37,10 +38,14 @@ def create_missing_folders(request):
 @json_api
 @catch_imapdb_errors
 def authenticate(request):
+	""" Simple test to see if the current session is authenticated or not. """
 	if request.session.get("login_details") is None:
 		return False
 	else:
-		d = login(request)
+		try:
+			d = login(request)
+		except ImapDbException:
+			return False
 		return True
 
 @json_api

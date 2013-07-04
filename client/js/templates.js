@@ -3,9 +3,6 @@ var template = {};
 
 var _dorcx_template_files = [
 	"login-form.html",
-	"signed-in-setup-folders.html",
-	"do-not-continue.html",
-	"need-more-folders.html",
 	"contact.html",
 	"thread.html",
 	"signed-out.html",

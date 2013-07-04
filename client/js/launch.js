@@ -64,19 +64,4 @@ $(function() {
 		
 		return false;
 	});
-	
-	$(document).on("click", "#setup-folders-yes", function(ev) {
-		// ask the server to create any missing folders for this user
-		$.get("create-missing-folders", function(data) {
-			console.log(data);
-			// load up the main interface
-			_dorcx_main();
-		}, "json");
-	});
-	
-	$(document).on("click", "#setup-folders-no", function(ev) {
-		// show the k thx bai screen
-		$("#content").html(template["do-not-continue.html"]);
-	});
-	
 });

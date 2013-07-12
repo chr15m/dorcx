@@ -100,6 +100,12 @@ class ImapDb(IMAPClient):
 		self.select_folder(folder_name, readonly=readonly)
 		return folder_name
 	
+	def list_folder(self, folder):
+		# choose the folder we want to list
+		self.select_folder("dorcx/" + folder, readonly=True)
+ 		# fetch a list of all message IDs in this mailbox
+		return self.search(["NOT DELETED"])
+	
 	def get_messages(self, message_ids):
 		response = self.fetch(message_ids, ['RFC822', 'FLAGS'])
 		messages = {}

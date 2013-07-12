@@ -34,7 +34,7 @@ class FeedCache:
 	def synchronise(self, connection):
 		cache = self.get_or_create_cache()
 		# figure out which messages are in our cache and which are missing
-		need_message_uids = set(connection.list_folder(self.foldername, True))
+		need_message_uids = set(connection.list_folder(self.foldername))
 		have_message_uids = set(cache.value["posts"].keys())
 		extra = have_message_uids - need_message_uids
 		missing = need_message_uids - have_message_uids

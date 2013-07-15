@@ -7,11 +7,12 @@ $(function() {
 	$(document).bind("templates_loaded", function(ev) {
 		// test to see if this client is already authenticated
 		$.get("authenticate", function(data) {
+			// hide the default loader
+			$("#loader").html("");
 			// if the server says we're not logged in
 			// or there is a problem with the authentication details
 			if (data == false || data["error"]) {
 				// start the login process
-				$("#loader").hide();
 				$("#content").html(template["login-form.html"]);
 			} else {
 				// otherwise load up the main interface

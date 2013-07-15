@@ -44,8 +44,16 @@ def authenticate(request):
 
 @json_api
 @catch_imapdb_errors
+def get_config(request):
+	d = login(request)
+	FeedCache("config", email=d.email).synchronise(d)
+	return d.get_config()
+
+@json_api
+@catch_imapdb_errors
 def get_contacts(request):
 	d = login(request)
+	FeedCache("contacts", email=d.email).synchronise(d)
 	return d.get_contacts()
 
 @json_api

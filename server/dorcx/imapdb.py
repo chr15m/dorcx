@@ -102,7 +102,7 @@ class ImapDb(IMAPClient):
 	
 	def list_folder(self, folder):
 		# choose the folder we want to list
-		self.select_folder("dorcx/" + folder, readonly=True)
+		self.select_or_create_folder(folder, readonly=True)
  		# fetch a list of all message IDs in this mailbox
 		return self.search(["NOT DELETED"])
 	
@@ -141,6 +141,10 @@ class ImapDb(IMAPClient):
 		# sort the messages by date
 		threads.sort(lambda a,b: cmp(a["header"]["Date"], b["header"]["Date"]))
 		return threads
+	
+	def get_config(self):
+		folder_name = self.select_or_create_folder("config")
+		return self.get_headers(0)
 	
 	def get_contacts(self):
 		folder_name = self.select_or_create_folder("contacts")

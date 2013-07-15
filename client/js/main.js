@@ -9,7 +9,6 @@ var dorcx = {
 function _dorcx_main() {
 	// show the main interface
 	$("#content").html(Mustache.render(template["main.html"], {}, {"posting": template["posting.html"]}));
-	$("#loader").hide();
 	
 	// hook up the 'sign out' button
 	$("#sign-out").click(function(ev) {
@@ -18,16 +17,27 @@ function _dorcx_main() {
 		}, "json");
 	});
 	
+	// load up my existing config
+	add_loader("config_loader", "Fetching config");
+	$.getJSON("get-config", function(config) {
+		dorcx.config = config;
+		del_loader("config_loader");
+	});
+	
 	// load up my existing contacts
-	$.getJSON("get-contacts", function(data) {
+	add_loader("contacts_loader", "Fetching contacts");
+	$.getJSON("get-contacts", function(contacts) {
 		console.log(contacts);
-		data.contacts = contacts;
+		dorcx.contacts = contacts;
+		del_loader("contacts_loader");
+		add_loader("contacts_update", "Updating contacts");
 		// initiate the check for new contacts
 		$.getJSON("update-contacts", function(contacts) {
 			console.log(contacts);
 			// TODO insert new contact data instead of wiping this out
 			dorcx.contacts = contacts;
-			$("#contacts").html("")
+			del_loader("contacts_update");
+			//$("#contacts").html("");
 			/*// clear out the existing list
 			$("#contacts").html("");
 			// fill the new-contacts box with the contacts we have found
@@ -58,7 +68,7 @@ function _dorcx_main() {
 	});
 	
 	// initiate a download of all threads
-	$.getJSON("get-threads", function(threads) {
+	/*$.getJSON("get-threads", function(threads) {
 		console.log(threads);
 		// clear out the existing list of threads
 		$("#threads").html("");
@@ -69,7 +79,7 @@ function _dorcx_main() {
 		}
 		// get the correct avatars
 		update_avatars($("#threads"));
-	});
+	});*/
 }
 
 function update_avatars(who) {

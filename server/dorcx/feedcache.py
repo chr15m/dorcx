@@ -48,7 +48,10 @@ class FeedCache:
 			return dateutil.parser.parse(c.value["posts"][u].get("Date", "1/1/1978 00:00:00 +0000"))
 		cache.value["uids_by_date"] = sorted(self.cache.value["posts"].keys(), lambda a, b: cmp(todate(cache, b), todate(cache, a)))
 		# date of the last post
-		cache.value["last"] = cache.value["posts"][cache.value["uids_by_date"][0]]["Date"]
+		if len(cache.value.get("uids_by_date", [])):
+			cache.value["last"] = cache.value["posts"][cache.value["uids_by_date"][0]]["Date"]
+		else:
+			return "1/1/1978 00:00:00 +0000"
 		cache.save()
 
 class FeedCacheFeed(Feed):

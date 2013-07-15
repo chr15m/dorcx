@@ -15,7 +15,14 @@ function _dorcx_main() {
 		$.get("signout", function(data) {
 			$("#content").html(template["signed-out.html"]);
 		}, "json");
+		ev.preventDefault();
 	});
+	
+	// add_loader("test one", "Test number one.");
+	// add_loader("another test", "The other test.");
+	// add_loader("flippin test", "Flippin' test.");
+	// add_error_message("This is my error message.");
+	// add_error_message("Just one more error.");
 	
 	// load up my existing config
 	add_loader("config_loader", "Fetching config");

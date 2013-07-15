@@ -8,7 +8,7 @@ $(function() {
 		// test to see if this client is already authenticated
 		$.get("authenticate", function(data) {
 			// hide the default loader
-			$("#loader").html("");
+			$("#messages").html("");
 			// if the server says we're not logged in
 			// or there is a problem with the authentication details
 			if (data == false || data["error"]) {

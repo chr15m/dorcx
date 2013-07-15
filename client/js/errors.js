@@ -17,12 +17,12 @@ function _dorcx_lookup_error(e) {
 }
 
 function add_error_message(msg) {
-	var error_message = $("<li>" + msg + "</li>");
+	var error_message = $(Mustache.render(template["error.html"], {"message": msg}));
 	// if the error message is clicked dissapear it
 	error_message.click(function() {
 		$(this).hide().remove();
 	});
-	$("#errors").append(error_message);
+	$("#messages").append(error_message);
 	return error_message;
 }
 

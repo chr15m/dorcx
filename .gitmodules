@@ -1,3 +1,6 @@
 [submodule "client/js/lib/mustache"]
 	path = client/js/lib/mustache
 	url = https://github.com/janl/mustache.js.git
+[submodule "client/css/font-awesome"]
+	path = client/css/font-awesome
+	url = https://github.com/FortAwesome/Font-Awesome.git

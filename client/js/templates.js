@@ -3,11 +3,14 @@ var template = {};
 
 var _dorcx_template_files = [
 	"login-form.html",
+	"loader.html",
+	"error.html",
 	"contact.html",
-	"thread.html",
+	//"thread.html",
 	"signed-out.html",
 	"posting.html",
-	"main.html"
+	"main.html",
+	"post.html"
 ];
 
 $(function() {

@@ -7,7 +7,9 @@
 		<title>dorcx - the personal social network built on your email box</title>
 		
 		<link rel="stylesheet" type="text/css" href="c/css/functional.css"/>
-		
+		<link rel="stylesheet" type="text/css" href="c/css/style.css"/>
+		<link rel="stylesheet" type="text/css" href="c/css/font-awesome/css/font-awesome.min.css">
+
 		<script src="c/js/lib/jquery-1.9.1.min.js"></script>
 		<script src="c/js/lib/mustache/mustache.js"></script>
 		
@@ -24,7 +26,11 @@
 	</head>
 	
 	<body class='no-touch'>
-		<ul id="loader"><img src='c/img/loader.gif'/>Loading...</ul>
+		<ul id="messages">
+			<div class="message loader">
+				<i class="icon-spinner icon-spin"></i> Loading...
+			</div>
+		</ul>
 		<ul id="errors"></ul>
 		<div id="content"></div>
 	</body>

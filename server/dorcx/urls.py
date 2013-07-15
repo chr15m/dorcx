@@ -7,7 +7,7 @@ from django.core.validators import email_re
 # from django.contrib import admin
 # admin.autodiscover()
 
-from dorcx.feedcache import FeedCacheFeed
+from dorcx.foldercache import FolderCacheFeed
 
 import settings
 
@@ -26,7 +26,7 @@ urlpatterns = patterns('',
 	url(r'^post$', "dorcx.views.post", name="post"),
 	
 	# RSS API endpoints
-	(r'^feed/(?P<email_hash>[a-zA-Z0-9]{32})/(?P<foldername>.*?).rss$', FeedCacheFeed()),
+	(r'^feed/(?P<email_hash>[a-zA-Z0-9]{32})/(?P<foldername>.*?).rss$', FolderCacheFeed()),
 	
 	# Uncomment the admin/doc line below to enable admin documentation:
 	# url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

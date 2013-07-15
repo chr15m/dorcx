@@ -8,7 +8,7 @@ from django.utils import feedgenerator
 
 from dorcx.utils import email_md5
 
-class FeedCache:
+class FolderCache:
 	""" Cache of messages by message ID. """
 	def __init__(self, foldername, email=None, md5ed_email=None):
 		if email:
@@ -17,7 +17,7 @@ class FeedCache:
 		else:
 			self.email = None
 		self.foldername = foldername
-		self.key = "feedcache-" + md5ed_email + "-" + foldername
+		self.key = "foldercache-" + md5ed_email + "-" + foldername
 	
 	def get_or_create_cache(self):
 		self.cache, created = LongCacheItem.objects.get_or_create(key=self.key)
@@ -54,13 +54,13 @@ class FeedCache:
 			return "1/1/1978 00:00:00 +0000"
 		cache.save()
 
-class FeedCacheFeed(Feed):
+class FolderCacheFeed(Feed):
 	feed_type = feedgenerator.Rss201rev2Feed
 
 	def get_object(self, request, email_hash, foldername):
 		self.email_hash = email_hash
 		self.foldername = foldername
-		return FeedCache(foldername, md5ed_email=email_hash).get_cache_or_404()
+		return FolderCache(foldername, md5ed_email=email_hash).get_cache_or_404()
 	
 	### feed level ###
 	

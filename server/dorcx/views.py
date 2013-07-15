@@ -8,7 +8,7 @@ import settings
 from json_encode import json_api
 
 from utils import login, catch_imapdb_errors
-from feedcache import FeedCache
+from foldercache import FolderCache
 from imapdb import people_from_header, ImapDbException
 
 @json_api
@@ -46,14 +46,14 @@ def authenticate(request):
 @catch_imapdb_errors
 def get_config(request):
 	d = login(request)
-	FeedCache("config", email=d.email).synchronise(d)
+	FolderCache("config", email=d.email).synchronise(d)
 	return d.get_config()
 
 @json_api
 @catch_imapdb_errors
 def get_contacts(request):
 	d = login(request)
-	FeedCache("contacts", email=d.email).synchronise(d)
+	FolderCache("contacts", email=d.email).synchronise(d)
 	return d.get_contacts()
 
 @json_api
@@ -97,7 +97,7 @@ def post(request):
 		# make the actual post into our 'imapdb'
 		result, message = d.post(folder, subject, body, date)
 		# update the cache of messages we keep server side for this user in this folder
-		FeedCache(folder, email=d.email).synchronise(d)
+		FolderCache(folder, email=d.email).synchronise(d)
 		return {"posted": result}
 	else:
 		return {"error": "No body or subject supplied."}

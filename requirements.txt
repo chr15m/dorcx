@@ -1,0 +1,4 @@
+django==1.4
+imapclient
+python-dateutil
+localmail

@@ -90,7 +90,7 @@ class ImapDb(IMAPClient):
 			
 			# In [13]: i.create_folder("dorcx/public")
 			# Out[13]: u'Create completed.'
-
+			
 			# In [9]: g.create_folder("dorcx/")
 			# Out[9]: u'[CANNOT] Ignoring hierarchy declaration (Success)'
 			
@@ -116,7 +116,7 @@ class ImapDb(IMAPClient):
 				messages[msgid] = msg
 		return messages
 	
-	def get_headers(self, number):
+	def get_headers(self, number=0):
 		# fetch a list of all message IDs in this mailbox
 		messages = self.search(["NOT DELETED"])
 		# now just pop the headers of the last number of them
@@ -144,11 +144,11 @@ class ImapDb(IMAPClient):
 	
 	def get_config(self):
 		folder_name = self.select_or_create_folder("config")
-		return self.get_headers(0)
+		return self.get_headers()
 	
 	def get_contacts(self):
 		folder_name = self.select_or_create_folder("contacts")
-		return self.get_headers(0)
+		return self.get_headers()
 	
 	def update_contacts(self, how_many):
 		contacts = []
@@ -179,25 +179,7 @@ class ImapDb(IMAPClient):
 		return contacts
 	
 	def post(self, folder, subject="", body="", date=None, metadata=None):
-		folder_name = "dorcx/" + folder
-		# test if the folder exists already
-		folder_exists = len(self.list_folders(folder_name))
-		if not folder_exists:
-			# create it if it does not yet exist
-			result = self.create_folder(folder_name)
-			# In [10]: g.create_folder("dorcx/public")
-			# Out[10]: u'Success'
-			
-			# In [13]: i.create_folder("dorcx/public")
-			# Out[13]: u'Create completed.'
-
-			# In [9]: g.create_folder("dorcx/")
-			# Out[9]: u'[CANNOT] Ignoring hierarchy declaration (Success)'
-			
-			# fail raises:
-			# error: create failed: u'[ALREADYEXISTS] Mailbox exists.'
-		# now choose the folder so we can write our new post to it
-		self.select_folder(folder_name, readonly=False)
+		folder_name = self.select_or_create_folder(folder)
 		# create the post as a new email
 		m = Message()
 		m["From"] = self.email
@@ -213,6 +195,10 @@ class ImapDb(IMAPClient):
 			# http://cr.yp.to/immhf/date.html
 			# Date: 23 Dec 1995 19:25:43 -0000
 			m["Date"] = msg_time.strftime("%a, %d %b %Y %X %z")
+		# set any other headers
+		for h in metadata:
+			m[h] = metadata[h]
+		# set the content of the message
 		if body:
 			m.set_payload(body)
 		response = self.append(folder_name, m.as_string(), msg_time=msg_time)
@@ -223,6 +209,7 @@ class ImapDb(IMAPClient):
 		if append_response_re.match(response):
 			result = append_response_re.match(response).groupdict()
 			result["codes"] = result["codes"].split(" ")
+			result["UID"] = int(result["codes"][:].pop())
 		return result, m
 
 def people_from_header(msg):
@@ -249,3 +236,61 @@ def remove_duplicate_people(email_list):
 
 def remove_noreplies(email_list):
 	return [e for e in email_list if noreply_email_re.match(e[1]) is None]
+
+
+### Unit tests ###
+
+
+if __name__ == '__main__':
+	import unittest
+	#import localmail
+	import threading
+	
+	class ImapDbTests(unittest.TestCase):
+		credentials = {
+			"email": "dorcxtester@gmail.com",
+			"password": "deedoubleoh", # llz - please don't abuse me! i'm just a humble test account.
+			"domain": "imap.gmail.com"
+		}
+		
+		def setUp(self):
+			self.db = ImapDb(self.credentials["email"], self.credentials["password"], domain=self.credentials["domain"])
+		
+		def testLogin(self):
+			self.assertEqual(type(self.db.capabilities()), tuple)
+			self.assertEqual(self.db.email, self.credentials["email"])
+			self.assertEqual(self.db.username, self.credentials["email"].split("@")[0])
+			self.assertEqual(self.db.domain, self.credentials["domain"])
+		
+		def testPost(self):
+			post = {
+				"folder": "public",
+				"subject": "This is my subject.",
+				"body": "This\r\nis\r\n\tmy\r\nmessage body.",
+				"metadata": {
+					"Fou": "Barre",
+					"Ping": "Pong"
+				}
+			}
+			
+			result = self.db.post(post["folder"], post["subject"], post["body"], metadata=post["metadata"])
+			self.assertTrue(len(result) > 0)
+			new_message_uid = result[0]["UID"]
+			#ids = set(self.db.list_folder(post["folder"]))
+			folder_contents = self.db.get_headers()
+			# check that our new post is in the folder with the subject and other headers specified
+			self.assertEqual(folder_contents[new_message_uid]["header"]["Subject"], post["subject"])
+			for m in post["metadata"]:
+				self.assertEqual(folder_contents[new_message_uid]["header"][m], post["metadata"][m])
+			# get all posts in this folder
+			posts = self.db.get_messages([new_message_uid])
+			# now check the body matches
+			self.assertEqual(posts[new_message_uid].get_payload(), post["body"])
+			# clean up
+			self.db.delete_messages([new_message_uid])
+			# self.expunge()
+		
+		def tearDown(self):
+			pass
+	
+	unittest.main()

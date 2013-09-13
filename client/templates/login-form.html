@@ -1,33 +1,66 @@
-<p>
-	dorcx is a personal social network built on your email box.
-	enter your email login below to get started.
-	your credentials, posts, and content aren't stored here - they stay right in your own mailbox. [<a href='#login-form-find-out-more'>find out more</a>]
-</p>
+<div id='login'>
+	<div class="logo">dorcx</div>
 
-<p id='login-form-find-out-more'>
-</p>
+	<div class="title">a peerless social network</div>
 
-<form id="login-form" action="signin" method="post">
-	<div id="login-form-minimal">
-		<label for="email">email: </label>
-			<input name="email" id="email"/>
-		<label for="password">password: </label>
-			<input name="password" type="password" id="password"/>
-		<button id="login-form-more-options">more options</button>
+	<div class="description">
+
+		<p>dorcx is a social network that operates out of your email box.</p>
+		<p>It's the Sherwood Forest of the interwebs, a place where you and
+		your merry friends can hang out free from the prying eyes of
+		corporations, advertisers, shysters and governments. It's time to take
+		back our internet, so pick up your bow and arrow, doff yr tricorn, and
+		join us here in the free web.</p>
+
+		<ul>
+			<li>Users own their own data - your content lives in your IMAP mailbox.</li>
+			<li>Decentralised &amp; Distributed - anyone can run a server.</li>
+			<li>Secure &amp; Private - uses GPG to sign and encrypt posts.</li>
+			<li>Free and Open Source - A/GPLv3 license.</li>
+		</ul>
+
+		<p>Follow the project &amp; get the source code at <a href="http://github.com/chr15m/dorcx/">Github</a>.</p>
+
 	</div>
-	<div id="login-form-extra-details">
-		<label for="username">username: </label>
-			<input name="username" id="username"/>
-		<label for="domain">domain: </label>
-			<input name="domain" type="domain" id="domain"/>
-	</div>
-	<input type="submit" value="submit" name="submit" id="login-form-submit"/>
-	<img src='c/img/loader.gif' id="login-form-submit-loader"/>
-</form>
 
-<p>
-	<a href='http://github.com/chr15m/dorcx'>
-		run your own instance<br/>
-		(get the source code)
-	</a>
-</p>
+	<form id="login-form" action="signin" method="post">
+		<div id="login-form-minimal">
+			<input name="email" id="email" placeholder="username@your-email-domain.com"/>
+			<input name="password" type="password" id="password" placeholder="********"/>
+			<img src='c/img/loader.gif' id="login-form-submit-loader"/>
+			<input class="dorcx_button" type="submit" value="sign in" name="submit" id="login-form-submit"/>
+			<button class="dorcx_button" id="login-form-more-options">more options</button>
+		</div>
+		<div id="login-form-extra-details">
+			<input name="username" id="username" placeholder="username"/>
+			<input name="domain" type="domain" id="domain" placeholder="mail.yourserver.com"/>
+		</div>
+	</form>
+
+	<div id="illustration">
+		<div class="peer">
+			<i class="icon-user"></i>
+		</div>
+		<div class="peer">
+			<i class="icon-user"></i>
+		</div>
+		<div class="peer">
+			<i class="icon-user"></i>
+		</div>
+		<div class="peer">
+			<i class="icon-user"></i>
+		</div>
+		<div class="peer">
+			<i class="icon-user"></i>
+		</div>
+		<div class="peer">
+			<i class="icon-user"></i>
+		</div>
+		<div class="peer">
+			<i class="icon-user"></i>
+		</div>
+		<div class="peer">
+			<i class="icon-user"></i>
+		</div>
+	</div>
+</div>

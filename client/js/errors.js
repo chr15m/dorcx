@@ -4,7 +4,8 @@ var _dorcx_error_messages = {
 	"BOX-CREATION": "There was a problem creating the dorcx folders in your email box.",
 	"INBOX-READ": "There was a problem communicating with your email box.",
 	"EMAIL-VALIDATION": "You have not entered a valid email address.",
-	"BAD-PROTOCOL": "Couldn't log in. Are you using the latest version?"
+	"BAD-PROTOCOL": "Couldn't log in. Are you using the latest version?",
+	"SOCKET": "We can't connect to your email server."
 }
 
 function _dorcx_lookup_error(e) {

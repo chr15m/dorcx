@@ -38,7 +38,7 @@ $(function() {
 		ev.preventDefault();
 		
 		// disable the submit button
-		$('input[type=submit]', this).attr('disabled', 'disabled');
+		$('#login-form-submit').hide();
 		// show the ajax loader next to the submit button
 		$("#login-form-submit-loader").show();
 		// remove any pending error messages
@@ -52,7 +52,7 @@ $(function() {
 				$("#login-form-extra-details").show();
 				// re-enable the submit button and loader
 				$("#login-form-submit-loader").hide();
-				$("#login-form-submit").attr('disabled', null);
+				$('#login-form-submit').show();
 			} else {
 				// load up the main interface
 				_dorcx_main();
@@ -60,7 +60,7 @@ $(function() {
 		}, "json").error(function() {
 			// re-enable the submit button and loader
 			$("#login-form-submit-loader").hide();
-			$("#login-form-submit").attr('disabled', null);
+			$('#login-form-submit').show();
 		});
 		
 		return false;

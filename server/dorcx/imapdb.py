@@ -8,6 +8,7 @@ from email.parser import HeaderParser
 from email.utils import getaddresses
 from email.message import Message
 from datetime import datetime
+import json
 
 from imapclient import IMAPClient
 
@@ -18,6 +19,8 @@ basic_email_re = re.compile(r"[^@]+@[^@]+\.[^@]+")
 plus_email_re = re.compile("\+.*\@")
 noreply_email_re = re.compile(".*?not{0,1}.{0,1}reply@.*?", flags=re.IGNORECASE)
 append_response_re = re.compile("\[(?P<codes>.*)\] \({0,1}(?P<message>.*)\){0,1}$", flags=re.IGNORECASE)
+
+json_marker = "X-dorcx-JSON-"
 
 class ImapDbException(Exception):
 	pass
@@ -100,11 +103,11 @@ class ImapDb(IMAPClient):
 		self.select_folder(folder_name, readonly=readonly)
 		return folder_name
 	
-	def list_folder(self, folder):
+	def list_folder(self, folder, additional=[]):
 		# choose the folder we want to list
 		self.select_or_create_folder(folder, readonly=True)
  		# fetch a list of all message IDs in this mailbox
-		return self.search(["NOT DELETED"])
+		return self.search(["NOT DELETED"] + additional, charset='utf-8')
 	
 	def get_messages(self, message_ids):
 		response = self.fetch(message_ids, ['RFC822', 'FLAGS'])
@@ -118,7 +121,7 @@ class ImapDb(IMAPClient):
 	
 	def get_headers(self, number=0):
 		# fetch a list of all message IDs in this mailbox
-		messages = self.search(["NOT DELETED"])
+		messages = self.search(["NOT DELETED"], charset='utf-8')
 		# now just pop the headers of the last number of them
 		all_headers = self.fetch(messages[-number:], ['BODY[HEADER]', 'UID'] + ("X-GM-EXT-1" in self.capabilities() and ['X-GM-MSGID', 'X-GM-THRID'] or []))
 		# parse them all and return
@@ -142,13 +145,70 @@ class ImapDb(IMAPClient):
 		threads.sort(lambda a,b: cmp(a["header"]["Date"], b["header"]["Date"]))
 		return threads
 	
-	def get_config(self):
-		folder_name = self.select_or_create_folder("config")
-		return self.get_headers()
+	def db_get_folder(self, folder, pk, include_uids=False):
+		messages = self.get_messages(self.list_folder(folder))
+		# TODO: ability to filter/exclude:
+		# HEADER <field-name> <string>
+		# NOT HEADER <field-name> <string>
+		db = {}
+		for uid in messages:
+			# ignore messages that don't contain the primary key field
+			if json_marker + pk in messages[uid].keys():
+				item = {}
+				# find all of the JSON metadata header keys
+				for k in [key for key in messages[uid].keys() if key.startswith(json_marker)]:
+					item[k[len(json_marker):]] = json.loads(messages[uid][k])
+				# if the UIDs were also requested
+				if include_uids:
+					if not item.has_key("UIDs"):
+						item["UIDs"] = []
+					item["UIDs"].append(uid)
+				if item.has_key(pk):
+					# if there happens to be more than one entry with the same primary key
+					if db.has_key(item[pk]):
+						# merge them
+						db[item[pk]].update(item)
+					else:
+						# create the new entry
+						db[item[pk]] = item
+		return db
 	
-	def get_contacts(self):
-		folder_name = self.select_or_create_folder("contacts")
-		return self.get_headers()
+	def db_sync_to_folder(self, folder, pk, datadict):
+		replace_uids = []
+		db = self.db_get_folder(folder, pk, include_uids=True)
+		for d in datadict:
+			# if we have this data entry already
+			if db.has_key(d):
+				#print "Replacing:", db[d]
+				replace_uids += db[d]["UIDs"]
+			#print "Posting:", datadict[d]
+			self.post(folder, subject="dorcx data [" + str(datadict[d].get(pk)) + "] - please do not delete", metadata=datadict[d])
+		self.delete_messages(replace_uids)
+		return db
+	
+	def db_delete_from_folder(self, folder, pk, pks=None):
+		# get all the data messages in the folder
+		messages = self.get_messages(self.list_folder(folder))
+		remove_uids = []
+		for uid in messages:
+			# check ever message to see if the pk matches the ones we want to delete
+			if pks is None or json.loads(messages[uid].get(json_marker + pk, "null")) in pks:
+				remove_uids.append(uid)
+		# now perform the delete
+		self.select_or_create_folder(folder)
+		#print "Deleting:", remove_uids
+		self.delete_messages(remove_uids)
+		self.expunge()
+		# return the UIDs of what we deleted
+		return remove_uids
+	
+	#def get_config(self):
+	#	folder_name = self.select_or_create_folder("config")
+	#	return self.get_headers()
+	
+	#def get_contacts(self):
+	#	folder_name = self.select_or_create_folder("contacts")
+	#	return self.get_headers()
 	
 	def update_contacts(self, how_many):
 		contacts = []
@@ -178,7 +238,7 @@ class ImapDb(IMAPClient):
 		contacts.sort(lambda a, b: cmp(b["count"], a["count"]))
 		return contacts
 	
-	def post(self, folder, subject="", body="", date=None, metadata=None):
+	def post(self, folder, subject="", body="", date=None, headers={}, metadata={}):
 		folder_name = self.select_or_create_folder(folder)
 		# create the post as a new email
 		m = Message()
@@ -196,8 +256,10 @@ class ImapDb(IMAPClient):
 			# Date: 23 Dec 1995 19:25:43 -0000
 			m["Date"] = msg_time.strftime("%a, %d %b %Y %X %z")
 		# set any other headers
-		for h in metadata:
-			m[h] = metadata[h]
+		for h in headers:
+			m[h] = headers[h]
+		for md in metadata:
+			m[json_marker + md] = json.dumps(metadata[md])
 		# set the content of the message
 		if body:
 			m.set_payload(body)
@@ -243,7 +305,6 @@ def remove_noreplies(email_list):
 
 if __name__ == '__main__':
 	import unittest
-	#import localmail
 	import threading
 	
 	class ImapDbTests(unittest.TestCase):
@@ -267,28 +328,66 @@ if __name__ == '__main__':
 				"folder": "public",
 				"subject": "This is my subject.",
 				"body": "This\r\nis\r\n\tmy\r\nmessage body.",
-				"metadata": {
+				"headers": {
 					"Fou": "Barre",
 					"Ping": "Pong"
 				}
 			}
 			
-			result = self.db.post(post["folder"], post["subject"], post["body"], metadata=post["metadata"])
+			result = self.db.post(post["folder"], post["subject"], post["body"], headers=post["headers"])
 			self.assertTrue(len(result) > 0)
 			new_message_uid = result[0]["UID"]
-			#ids = set(self.db.list_folder(post["folder"]))
 			folder_contents = self.db.get_headers()
 			# check that our new post is in the folder with the subject and other headers specified
 			self.assertEqual(folder_contents[new_message_uid]["header"]["Subject"], post["subject"])
-			for m in post["metadata"]:
-				self.assertEqual(folder_contents[new_message_uid]["header"][m], post["metadata"][m])
+			for m in post["headers"]:
+				self.assertEqual(folder_contents[new_message_uid]["header"][m], post["headers"][m])
+			# TODO: test JSON metadata as well as regular header setting
 			# get all posts in this folder
 			posts = self.db.get_messages([new_message_uid])
 			# now check the body matches
 			self.assertEqual(posts[new_message_uid].get_payload(), post["body"])
 			# clean up
 			self.db.delete_messages([new_message_uid])
-			# self.expunge()
+		
+		def testDbFolder(self):
+			testfolder = "testdb"
+			test_pk = "id"
+			testdata = {
+				5: {"id": 5, "thingy": "foo", "list": [4, 3, 44]},
+				3: {"id": 3, "thingy": "barre", "list": [6, 5]},
+				27: {"id": 27, "thingy": "zzz"},
+			}
+			update = {
+				3: {"id": 3, "thing": "new", "other": [2, 4, 5]}
+			}
+			# update the database with some data
+			self.db.db_sync_to_folder(testfolder, "id", testdata)
+			# fetch the current data
+			db = self.db.db_get_folder(testfolder, "id")
+			# make sure the databases match
+			self.assertEqual(set(db.keys()), set(testdata.keys()))
+			for i in db:
+				self.assertEqual(set(db[i].keys()), set(testdata[i].keys()))
+				for k in db[i]:
+					self.assertEqual(db[i][k], testdata[i].get(k))
+			# update the database with some new data
+			self.db.db_sync_to_folder(testfolder, "id", update)
+			testdata.update(update)
+			# fetch the current data
+			db = self.db.db_get_folder(testfolder, "id")
+			# make sure the databases match
+			self.assertEqual(set(db.keys()), set(testdata.keys()))
+			for i in db:
+				self.assertEqual(set(db[i].keys()), set(testdata[i].keys()))
+				for k in db[i]:
+					self.assertEqual(db[i][k], testdata[i].get(k))
+			# clean up by removing the data items we created
+			self.db.db_delete_from_folder(testfolder, "id", testdata.keys())
+			# fetch the current data and verify there is none
+			db = self.db.db_get_folder(testfolder, "id", include_uids=True)
+			# make sure none of the data elements we inserted remain in this folder
+			self.assertEqual(len([d for d in db.keys() if d in testdata.keys()]), 0)
 		
 		def tearDown(self):
 			pass

@@ -19,13 +19,17 @@ function _dorcx_lookup_error(e) {
 
 var _dorcx_error_message_container = null;
 
-function add_error_message(msg) {
-	var error_message = $(Mustache.render(template["error.html"], {"message": msg}));
+function add_error_message(msg, detail) {
+	var error_message = $(Mustache.render(template["error.html"], {"message": msg, "detail": detail}));
 	// if the error message is clicked dissapear it
 	error_message.click(function() {
 		$(this).hide().remove();
 	});
-	console.log(_dorcx_error_message_container);
+	error_message.hover(function() {
+		$(this).find(".detail").show();
+	}, function() {
+		$(this).find(".detail").hide();
+	});
 	_dorcx_error_message_container.append(error_message);
 	return error_message;
 }
@@ -43,7 +47,7 @@ function catch_ajax_errors(container) {
 			if (settings["dataType"] == "json") {
 				var data = $.parseJSON(request.responseText);
 				if (data["error"]) {
-					add_error_message(_dorcx_lookup_error(data));
+					add_error_message(_dorcx_lookup_error(data), data["error"][1]);
 				}
 			}
 		});

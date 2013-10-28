@@ -17,6 +17,8 @@ function _dorcx_main() {
 	$("#sign-out").click(function(ev) {
 		$.get("signout", function(data) {
 			$("#content").html(template["signed-out.html"]);
+			// clear all messages
+			$("#messages").html("");
 		}, "json");
 		ev.preventDefault();
 	});

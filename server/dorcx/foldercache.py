@@ -56,7 +56,7 @@ class FolderCache:
 
 class FolderCacheFeed(Feed):
 	feed_type = feedgenerator.Rss201rev2Feed
-
+	
 	def get_object(self, request, email_hash, foldername):
 		self.email_hash = email_hash
 		self.foldername = foldername
@@ -86,7 +86,7 @@ class FolderCacheFeed(Feed):
 	
 	def item_link(self, item):
 		return "/post/" + self.email_hash + "/" + self.foldername + "/" + str(item["uid"])
-
+	
 	def item_pubdate(self, item):
 		if item["post"].get("Date"):
 			dateutil.parser.parse(item["post"]["Date"])

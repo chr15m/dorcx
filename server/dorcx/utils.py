@@ -15,7 +15,7 @@ def catch_imapdb_errors(fn):
 		try:
 			return fn(request, *args, **kwargs)
 		except ImapDbException, e:
-			if len(e.messages) and e.messages[0] == "AUTH":
+			if not hasattr(e, "messages") or len(e.messages) and e.messages[0] == "AUTH":
 				del request.session["login_details"]
 			return {"error": e.message}
 		except socket.gaierror, e:

@@ -202,6 +202,19 @@ input {
 	color: #ff5e5e;
 }
 
+.message.info {
+	background-color: #f8f8f8;
+	color: #333;
+}
+
+#signout-message.message {
+	text-align: center;
+}
+
+.message .detail {
+	display: none;
+}
+
 .propogating_message {
 	width:89%;
 	margin-right: 2%;

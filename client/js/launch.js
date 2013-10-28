@@ -1,7 +1,7 @@
 // when the app is first loaded in the browser this code runs
 $(function() {
 	// in error.js always catch errors that come back via ajax and display the message
-	catch_ajax_errors();
+	catch_ajax_errors($("#messages"));
 	
 	// once the templates are loaded
 	$(document).bind("templates_loaded", function(ev) {
@@ -12,8 +12,10 @@ $(function() {
 			// if the server says we're not logged in
 			// or there is a problem with the authentication details
 			if (data == false || data["error"]) {
-				// start the login process
+				// show the user the login form
 				$("#content").html(template["login-form.html"]);
+				// redirect error messages to where the user will more easily see them
+				catch_ajax_errors($("#login-messages"));
 			} else {
 				// otherwise load up the main interface
 				_dorcx_main();
@@ -36,6 +38,9 @@ $(function() {
 	$(document).on("submit", "#login-form", function(ev) {
 		// stop form from submitting normally
 		ev.preventDefault();
+		
+		// clear any existing error messages
+		$("#login-messages").html("");
 		
 		// disable the submit button
 		$('#login-form-submit').hide();

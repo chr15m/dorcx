@@ -17,29 +17,38 @@ function _dorcx_lookup_error(e) {
 	}
 }
 
+var _dorcx_error_message_container = null;
+
 function add_error_message(msg) {
 	var error_message = $(Mustache.render(template["error.html"], {"message": msg}));
 	// if the error message is clicked dissapear it
 	error_message.click(function() {
 		$(this).hide().remove();
 	});
-	$("#messages").append(error_message);
+	console.log(_dorcx_error_message_container);
+	_dorcx_error_message_container.append(error_message);
 	return error_message;
 }
 
-function catch_ajax_errors() {
-	// if we receive a genuine ajax error then report it
-	$(document).ajaxError(function(ev, request, settings) {
-		add_error_message("Sorry, there was a problem contacting the server.");
-	});
-	
-	// check all messages coming back from the server for the 'error' key and display
-	$(document).ajaxComplete(function(ev, request, settings) {
-		if (settings["dataType"] == "json") {
-			var data = $.parseJSON(request.responseText);
-			if (data["error"]) {
-				add_error_message(_dorcx_lookup_error(data));
+function catch_ajax_errors(container) {
+	// first time we are run, set up the actual event handlers
+	if (!_dorcx_error_message_container) {
+		// if we receive a genuine ajax error then report it
+		$(document).ajaxError(function(ev, request, settings) {
+			add_error_message("Sorry, there was a problem contacting the server.");
+		});
+		
+		// check all messages coming back from the server for the 'error' key and display
+		$(document).ajaxComplete(function(ev, request, settings) {
+			if (settings["dataType"] == "json") {
+				var data = $.parseJSON(request.responseText);
+				if (data["error"]) {
+					add_error_message(_dorcx_lookup_error(data));
+				}
 			}
-		}
-	});
+		});
+	}
+	
+	// tell the errors where to go
+	_dorcx_error_message_container = container;
 }

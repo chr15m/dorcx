@@ -10,6 +10,9 @@ function _dorcx_main() {
 	// show the main interface
 	$("#content").html(Mustache.render(template["main.html"], {}, {"posting": template["posting.html"]}));
 	
+	// where to put the error messages on the page
+	catch_ajax_errors($("#messages"));
+	
 	// hook up the 'sign out' button
 	$("#sign-out").click(function(ev) {
 		$.get("signout", function(data) {

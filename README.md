@@ -1,11 +1,13 @@
 With dorcx your email box is your social network.
 
-Unlike other social networks:
+Unlike other social networks, dorcx:
 
- * All of your data stays with you, right in your email box.
- * This one has no central controlling company or authority.
- * This one cares about your security, and posts are signed or encrypted.
- * This one is [Free](http://en.wikipedia.org/wiki/Free_software) and open.
+ * You keep all your data, right in your email box.
+ * Has no central authority or company.
+ * Cares about privacy - posts are signed or encrypted.
+ * Is [Free](http://en.wikipedia.org/wiki/Free_software) and open.
+ * Uses open standards like RSS and IMAP.
+ * Aims to be easy for anyone to deploy.
 
 License
 -------

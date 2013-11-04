@@ -14,6 +14,7 @@ from imapclient import IMAPClient
 
 # TODO: persist multiple imap connections in some sensible way (check out imap proxys like perdition)
 # TODO: unit tests
+# TODO: reimplement this in node.js ;)
 
 basic_email_re = re.compile(r"[^@]+@[^@]+\.[^@]+")
 plus_email_re = re.compile("\+.*\@")
@@ -80,14 +81,37 @@ class ImapDb(IMAPClient):
 			[x for x in ("\\All", "\\Sent", "\\Flagged", "\\Important") if x in f[0]]
 		)]
 	
+	def create_folder_recursive(self, folder_name, results=[]):
+		folder_name = folder_name.rstrip("/")
+		# does this folder already exist at my level?
+		#folder_exists = len(self.list_folders(folder_name))
+		# if not, pass it upward
+		#if not folder_exists:
+		try:
+			create_result = self.create_folder(folder_name)
+		except self.Error, e:
+			# we don't care if it's just an already exists error
+			if not "ALREADYEXISTS" in str(e):
+				raise
+			else:
+				create_result = e
+		results.append((folder_name, create_result))
+		# make sure the parent levels are also created
+		parts = folder_name.rsplit("/", 1)
+		if len(parts) == 2:
+			self.create_folder_recursive(parts[0], results)
+		return results
+	
+	# TODO: also add recursive delete (everything below specified folder)
+	
 	def select_or_create_folder(self, folder, readonly=False):
 		folder_name = "dorcx/" + folder
 		# test if the folder exists already
 		folder_exists = len(self.list_folders(folder_name))
 		if not folder_exists:
-			# TODO: recursive create for gmail texting each folder level
+			self.create_folder_recursive(folder_name)
 			# create it if it does not yet exist
-			result = self.create_folder(folder_name)
+			# result = self.create_folder(folder_name)
 			# In [10]: g.create_folder("dorcx/public")
 			# Out[10]: u'Success'
 			
@@ -323,9 +347,21 @@ if __name__ == '__main__':
 			self.assertEqual(self.db.username, self.credentials["email"].split("@")[0])
 			self.assertEqual(self.db.domain, self.credentials["domain"])
 		
+		def testCreateFolders(self):
+			self.db.select_or_create_folder("testfldr/hello/what")
+			# check the folders we created are there
+			new_folders = self.db.list_folders("dorcx/testfldr")
+			self.assertEqual(len(new_folders), 3)
+			self.assertEqual(len([f for f in new_folders if f[2] == "dorcx/testfldr/hello/what"]), 1)
+			# clean up
+			# TODO: recursive delete here
+			self.db.delete_folder("dorcx/testfldr/hello/what")
+			self.db.delete_folder("dorcx/testfldr/hello")
+			self.db.delete_folder("dorcx/testfldr")
+		
 		def testPost(self):
 			post = {
-				"folder": "public",
+				"folder": "posts/public",
 				"subject": "This is my subject.",
 				"body": "This\r\nis\r\n\tmy\r\nmessage body.",
 				"headers": {
